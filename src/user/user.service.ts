@@ -5,7 +5,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Repository } from 'typeorm';
-import { WechatUserInfo } from '../auth/auth.interface';
 
 @Injectable()
 export class UserService {
@@ -14,37 +13,30 @@ export class UserService {
     private userRepository: Repository<User>,
   ) {}
 
-  /**
-   * 账号密码注册
-   * @param createUser
-   */
   async register(createUser: CreateUserDto) {
-    const { username } = createUser;
+    const { email } = createUser;
 
     const user = await this.userRepository.findOne({
-      where: { username },
+      where: { email },
     });
 
     if (user) {
-      throw new HttpException(
-        'Username already exists',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new HttpException('email already exists', HttpStatus.BAD_REQUEST);
     }
 
     const newUser = await this.userRepository.create(createUser);
     return await this.userRepository.save(newUser);
   }
 
-  async registerByWechat(userInfo: WechatUserInfo) {
-    const { nickname, openid, head_img_url } = userInfo;
-    const newUser = await this.userRepository.create({
-      nickname,
-      openid,
-      avatar: head_img_url,
-    });
-    return await this.userRepository.save(newUser);
-  }
+  // async registerByWechat(userInfo: WechatUserInfo) {
+  //   const { nickname, openid, head_img_url } = userInfo;
+  //   const newUser = await this.userRepository.create({
+  //     nickname,
+  //     openid,
+  //     avatar: head_img_url,
+  //   });
+  //   return await this.userRepository.save(newUser);
+  // }
 
   //   async login(user: Partial<CreateUserDto>) {
   //     const { username, password } = user;
@@ -73,8 +65,8 @@ export class UserService {
     return await this.userRepository.findOneBy({ id });
   }
 
-  async findByOpenid(openid: string) {
-    return await this.userRepository.findOne({ where: { openid } });
+  async findByOpenid(id: string) {
+    return await this.userRepository.findOne({ where: { id } });
   }
 
   update(id: number, updateUserDto: UpdateUserDto) {

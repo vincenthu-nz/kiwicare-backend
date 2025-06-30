@@ -23,7 +23,7 @@ export class AuthService {
   async login(user: Partial<User>) {
     const token = this.createToken({
       id: user.id,
-      username: user.username,
+      email: user.email,
       role: user.role,
     });
 

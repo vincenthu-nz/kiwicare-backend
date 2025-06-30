@@ -23,12 +23,12 @@ import {
 import { UserInfoDto } from './dto/user-info.dto';
 import { AuthGuard } from '@nestjs/passport';
 
-@ApiTags('用户')
+@ApiTags('user')
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @ApiOperation({ summary: '注册用户' })
+  @ApiOperation({ summary: 'register user' })
   @ApiResponse({ status: 201, type: UserInfoDto })
   @UseInterceptors(ClassSerializerInterceptor)
   @Post('register')

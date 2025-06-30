@@ -21,10 +21,10 @@ export class PostsEntity {
   @Column({ length: 50 })
   title: string;
 
-  @Column({ type: 'mediumtext', default: null })
+  @Column({ type: 'text', default: null })
   content: string;
 
-  @Column({ type: 'mediumtext', default: null, name: 'content_html' })
+  @Column({ type: 'text', default: null, name: 'content_html' })
   contentHtml: string;
 
   @Column({ type: 'text', default: null })
@@ -39,13 +39,13 @@ export class PostsEntity {
   @Column({ type: 'int', default: 0, name: 'like_count' })
   likeCount: number;
 
-  @Column({ type: 'tinyint', default: 0, name: 'is_recommend' })
-  isRecommend: number;
+  @Column({ type: 'boolean', default: false, name: 'is_recommend' })
+  isRecommend: boolean;
 
   @Column('simple-enum', { enum: ['draft', 'publish'] })
   status: string;
 
-  @ManyToOne(() => User, (user) => user.nickname)
+  @ManyToOne(() => User, (user) => user.name)
   author: User;
 
   @Exclude()
@@ -82,25 +82,26 @@ export class PostsEntity {
   })
   updateTime: Date;
 
+  @Column({ type: 'text', nullable: true })
+  toc: string;
+
   toResponseObject(): PostInfoDto {
-    const responseObj: PostInfoDto = {
-      ...this,
-      isRecommend: !!this.isRecommend,
+    return {
+      id: this.id,
+      title: this.title,
+      content: this.content,
+      contentHtml: this.contentHtml,
+      summary: this.summary,
+      coverUrl: this.coverUrl,
+      isRecommend: this.isRecommend,
+      status: this.status,
+      userId: this.author?.id ?? '',
+      author: this.author?.name || this.author?.name || '',
+      category: this.category?.name ?? '',
+      tags: this.tags?.map((tag) => tag.name) ?? [],
+      count: this.count,
+      likeCount: this.likeCount,
+      toc: this.toc,
     };
-
-    if (this.category) {
-      responseObj.category = this.category.name;
-    }
-
-    if (this.tags && this.tags.length) {
-      responseObj.tags = this.tags.map((item) => item.name);
-    }
-
-    if (this.author && this.author.id) {
-      responseObj.userId = this.author.id;
-      responseObj.author = this.author.nickname || this.author.username;
-    }
-
-    return responseObj;
   }
 }

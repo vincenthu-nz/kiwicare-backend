@@ -5,7 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from 'src/user/entities/user.entity';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { LocalStorage } from './local.strategy';
+import { LocalStrategy } from './local.strategy';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { UserModule } from 'src/user/user.module';
@@ -30,7 +30,7 @@ const jwtModule = JwtModule.registerAsync({
     UserModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, LocalStorage, JwtStorage],
+  providers: [AuthService, LocalStrategy, JwtStorage],
   exports: [jwtModule],
 })
 export class AuthModule {}

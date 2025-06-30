@@ -35,7 +35,7 @@ export class PostsService {
 
     const postData: Partial<PostsEntity> = {
       ...postDto,
-      isRecommend: isRecommend ? 1 : 0,
+      isRecommend: isRecommend,
       category: categoryEntity,
       tags,
       author: user,
@@ -100,7 +100,7 @@ export class PostsService {
 
     const updatedData: Partial<PostsEntity> = {
       ...postDto,
-      isRecommend: postDto.isRecommend ? 1 : 0,
+      isRecommend: postDto.isRecommend,
       category: categoryEntity,
       tags,
       publishTime: status === 'publish' ? new Date() : existingPost.publishTime,

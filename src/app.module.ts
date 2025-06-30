@@ -3,7 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PostsModule } from './posts/posts.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigService, ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import envConfig from '../config/env';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
@@ -17,14 +17,13 @@ import { TagModule } from './tag/tag.module';
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
-        type: 'mysql',
-        host: configService.get('DB_HOST', '127.0.0.0'),
-        port: configService.get<number>('DB_PORT', 3306),
-        username: configService.get('DB_USER', 'root'),
-        password: configService.get('DB_PASSWORD', 'root'),
-        database: configService.get('DB_DATABASE', 'blog'),
-        // charset: 'utf8mb4',
-        timezone: '+08:00',
+        type: 'postgres',
+        host: configService.get('DB_HOST'),
+        port: configService.get<number>('DB_PORT'),
+        username: configService.get('DB_USER'),
+        password: configService.get('DB_PASSWORD'),
+        database: configService.get('DB_DATABASE'),
+        ssl: { rejectUnauthorized: false },
         synchronize: true,
         autoLoadEntities: true,
       }),

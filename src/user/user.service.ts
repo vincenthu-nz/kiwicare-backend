@@ -71,7 +71,7 @@ export class UserService {
   }
 
   async findOne(id: string) {
-    return await this.userRepository.findOne(id);
+    return await this.userRepository.findOneBy({ id });
   }
 
   async findByOpenid(openid: string) {

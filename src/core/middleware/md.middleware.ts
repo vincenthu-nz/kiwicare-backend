@@ -36,7 +36,7 @@ function toText(html, len = 30) {
 function getToc(html: string) {
   // 这个功能能前端做还是前端做
   // decodeEntities防止中文转化为unicdoe
-  const $ = cheerio.load(html, { decodeEntities: false });
+  const $ = cheerio.load(html);
 
   // 用count生成自定义id
   let hArr = [],

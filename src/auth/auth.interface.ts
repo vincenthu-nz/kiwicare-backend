@@ -27,7 +27,7 @@ export interface WechatUserInfo {
   city: string;
   province: string;
   country: string;
-  headimgurl: string;
+  head_img_url: string;
   privilege: string[];
   unionid: string;
 }

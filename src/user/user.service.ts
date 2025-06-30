@@ -1,11 +1,6 @@
 import { compareSync } from 'bcryptjs';
 import { User } from './entities/user.entity';
-import {
-  Injectable,
-  HttpException,
-  HttpStatus,
-  BadRequestException,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -29,8 +24,12 @@ export class UserService {
     const user = await this.userRepository.findOne({
       where: { username },
     });
+
     if (user) {
-      throw new HttpException('用户名已存在', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'Username already exists',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     const newUser = await this.userRepository.create(createUser);
@@ -38,11 +37,11 @@ export class UserService {
   }
 
   async registerByWechat(userInfo: WechatUserInfo) {
-    const { nickname, openid, headimgurl } = userInfo;
+    const { nickname, openid, head_img_url } = userInfo;
     const newUser = await this.userRepository.create({
       nickname,
       openid,
-      avatar: headimgurl,
+      avatar: head_img_url,
     });
     return await this.userRepository.save(newUser);
   }

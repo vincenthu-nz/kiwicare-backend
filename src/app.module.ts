@@ -9,10 +9,11 @@ import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { CategoryModule } from './category/category.module';
 import { TagModule } from './tag/tag.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: [envConfig.path] }),
-    ConfigModule.forRoot({isGlobal: true}),
+    ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
@@ -25,7 +26,7 @@ import { TagModule } from './tag/tag.module';
         // charset: 'utf8mb4',
         timezone: '+08:00',
         synchronize: true,
-        autoLoadEntities: true
+        autoLoadEntities: true,
       }),
     }),
     PostsModule,

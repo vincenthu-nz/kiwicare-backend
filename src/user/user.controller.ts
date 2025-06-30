@@ -1,16 +1,15 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
-  Delete,
-  UseInterceptors,
   ClassSerializerInterceptor,
-  UseGuards,
-  Request,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
   Req,
+  UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -37,7 +36,7 @@ export class UserController {
     return this.userService.register(createUser);
   }
 
-  @ApiOperation({ summary: '获取用户信息' })
+  @ApiOperation({ summary: 'Fetch user info' })
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
   @Get()

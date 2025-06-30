@@ -2,27 +2,27 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsNotEmpty, IsNumber } from 'class-validator';
 
 export class CreatePostDto {
-  @ApiProperty({ description: '文章标题' })
-  @IsNotEmpty({ message: '文章标题必填' })
+  @ApiProperty({ description: 'Post title' })
+  @IsNotEmpty({ message: 'Post title is required' })
   readonly title: string;
 
-  @ApiPropertyOptional({ description: '内容' })
+  @ApiPropertyOptional({ description: 'Content' })
   readonly content: string;
 
-  @ApiPropertyOptional({ description: '文章封面' })
+  @ApiPropertyOptional({ description: 'Cover image URL' })
   readonly coverUrl: string;
 
-  @ApiPropertyOptional({ description: '文章状态' })
+  @ApiPropertyOptional({ description: 'Post status' })
   readonly status: string;
 
   @IsNumber()
-  @ApiProperty({ description: '文章分类' })
+  @ApiProperty({ description: 'Post category ID' })
   readonly category: number;
 
-  @ApiPropertyOptional({ description: '是否推荐' })
+  @ApiPropertyOptional({ description: 'Recommended flag' })
   readonly isRecommend: boolean;
 
-  @ApiPropertyOptional({ description: '文章标签' })
+  @ApiPropertyOptional({ description: 'Tags (comma-separated)' })
   readonly tag: string;
 }
 

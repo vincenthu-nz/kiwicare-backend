@@ -1,25 +1,20 @@
-import { UserService } from './../user/user.service';
-import { Injectable, BadRequestException, HttpException } from '@nestjs/common';
+import { UserService } from '../user/user.service';
+import { Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { JwtService } from '@nestjs/jwt';
 import { User } from '../user/entities/user.entity';
-import {
-  AccessTokenInfo,
-  AccessConfig,
-  WechatError,
-  WechatUserInfo,
-} from './auth.interface';
-import { lastValueFrom, map, Observable } from 'rxjs';
+import { AccessTokenInfo } from './auth.interface';
 
 @Injectable()
 export class AuthService {
+  public apiServer = 'https://api.weixin.qq.com';
+  private accessTokenInfo: AccessTokenInfo;
+
   constructor(
     private jwtService: JwtService,
     private userService: UserService,
     private httpService: HttpService,
   ) {}
-  private accessTokenInfo: AccessTokenInfo;
-  public apiServer = 'https://api.weixin.qq.com';
 
   createToken(user: Partial<User>) {
     return this.jwtService.sign(user);
@@ -42,6 +37,7 @@ export class AuthService {
   async getUserByOpenid() {
     return await this.userService.findByOpenid(this.accessTokenInfo.openid);
   }
+
   // async getUserInfo() {
   //   const result: AxiosResponse<WechatError & WechatUserInfo> =
   //     await lastValueFrom(

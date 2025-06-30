@@ -13,7 +13,6 @@ export class TagEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  // 标签名
   @Column()
   name: string;
 
@@ -22,14 +21,14 @@ export class TagEntity {
 
   @CreateDateColumn({
     type: 'timestamp',
-    comment: '创建时间',
+    comment: 'create time',
     name: 'create_time',
   })
   createTime: Date;
 
   @UpdateDateColumn({
     type: 'timestamp',
-    comment: '更新时间',
+    comment: 'update time',
     name: 'update_time',
   })
   updateTime: Date;

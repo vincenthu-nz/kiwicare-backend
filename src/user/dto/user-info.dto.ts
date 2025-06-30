@@ -2,22 +2,22 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty } from 'class-validator';
 
 export class UserInfoDto {
-  @ApiProperty({ description: '用户名' })
+  @ApiProperty({ description: 'Username' })
   @IsNotEmpty()
   username: string;
 
-  @ApiProperty({ description: '用户昵称' })
+  @ApiProperty({ description: 'User nickname' })
   nickname: string;
 
-  @ApiProperty({ description: '用户头像' })
+  @ApiProperty({ description: 'User avatar' })
   avatar: string;
 
-  @ApiProperty({ description: '用户邮箱' })
+  @ApiProperty({ description: 'User email' })
   email: string;
 
-  @ApiProperty({ description: '角色' })
+  @ApiProperty({ description: 'User role' })
   role: string;
 
-  @ApiProperty({ description: '创建时间' })
+  @ApiProperty({ description: 'Creation time' })
   createTime: Date;
 }

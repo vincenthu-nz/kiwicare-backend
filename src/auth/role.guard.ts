@@ -30,7 +30,9 @@ export class RolesGuard implements CanActivate {
     }
     const hasRoles = roles.some((role) => role === user.role);
     if (!hasRoles) {
-      throw new UnauthorizedException('您没有权限');
+      throw new UnauthorizedException(
+        'You do not have permission to access this resource.',
+      );
     }
     return hasRoles;
   }

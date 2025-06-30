@@ -1,12 +1,4 @@
-/*
- * @Descripttion:
- * @version:
- * @Author: koala
- * @Date: 2021-12-11 15:48:24
- * @LastEditors: koala
- * @LastEditTime: 2022-01-21 10:50:48
- */
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PostsService } from './posts.service';
 import {
   Body,
@@ -22,17 +14,14 @@ import {
 } from '@nestjs/common';
 import { CreatePostDto, PostsRo } from './dto/post.dto';
 import { AuthGuard } from '@nestjs/passport';
-import { RolesGuard, Roles } from './../auth/role.guard';
+import { Roles, RolesGuard } from '../auth/role.guard';
 
-@ApiTags('文章')
+@ApiTags('Posts')
 @Controller('post')
 export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
-  /**
-   * 创建文章
-   */
-  @ApiOperation({ summary: '创建文章' })
+  @ApiOperation({ summary: 'Create a new post' })
   @ApiBearerAuth()
   @Post()
   @Roles('admin', 'root')
@@ -41,10 +30,7 @@ export class PostsController {
     return await this.postsService.create(req.user, post);
   }
 
-  /**
-   * 获取所有文章
-   */
-  @ApiOperation({ summary: '获取文章列表' })
+  @ApiOperation({ summary: 'Get post list' })
   @Get('/list')
   async findAll(
     @Query() query,
@@ -53,40 +39,26 @@ export class PostsController {
   ): Promise<PostsRo> {
     return await this.postsService.findAll(query);
   }
-  /**
-   * 获取归档列表
-   */
-  @ApiOperation({ summary: '归档日期列表' })
+
+  @ApiOperation({ summary: 'Get archive date list' })
   @Get('/archives')
   getArchives() {
     return this.postsService.getArchives();
   }
 
-  /**
-   * 获取文章归档
-   */
-  @ApiOperation({ summary: '文章归档' })
+  @ApiOperation({ summary: 'Get post archives' })
   @Get('/archives/list')
-  getArchiveList(@Query("time") time: string) {
+  getArchiveList(@Query('time') time: string) {
     return this.postsService.getArchiveList(time);
   }
 
-  /**
-   * 获取指定文章
-   * @param id
-   */
-  @ApiOperation({ summary: '获取指定文章' })
+  @ApiOperation({ summary: 'Get specific post' })
   @Get(':id')
   async findById(@Param('id') id: string) {
     return await this.postsService.findById(id);
   }
 
-  /**
-   * 更新文章
-   * @param id
-   * @param post
-   */
-  @ApiOperation({ summary: '更新指定文章' })
+  @ApiOperation({ summary: 'Update specific post' })
   @ApiBearerAuth()
   @Put(':id')
   @UseGuards(AuthGuard('jwt'))
@@ -94,11 +66,7 @@ export class PostsController {
     return await this.postsService.updateById(id, post);
   }
 
-  /**
-   * 删除
-   * @param id
-   */
-  @ApiOperation({ summary: '删除文章' })
+  @ApiOperation({ summary: 'Delete post' })
   @Delete(':id')
   async remove(@Param('id') id) {
     return await this.postsService.remove(id);

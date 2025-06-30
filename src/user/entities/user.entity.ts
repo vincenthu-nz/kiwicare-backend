@@ -9,9 +9,10 @@ import {
 import * as bcrypt from 'bcryptjs';
 import { ApiProperty } from '@nestjs/swagger';
 import { PostsEntity } from 'src/posts/posts.entity';
+
 @Entity('user')
 export class User {
-  @ApiProperty({ description: '用户id' })
+  @ApiProperty({ description: 'user id' })
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -58,6 +59,6 @@ export class User {
   @BeforeInsert()
   async encryptPwd() {
     if (!this.password) return;
-    this.password = await bcrypt.hashSync(this.password, 10);
+    this.password = bcrypt.hashSync(this.password, 10);
   }
 }

@@ -13,7 +13,6 @@ import { TagModule } from './tag/tag.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: [envConfig.path] }),
-    ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
@@ -24,7 +23,7 @@ import { TagModule } from './tag/tag.module';
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
         ssl: { rejectUnauthorized: false },
-        synchronize: true,
+        synchronize: configService.get('NODE_ENV') !== 'prod',
         autoLoadEntities: true,
       }),
     }),

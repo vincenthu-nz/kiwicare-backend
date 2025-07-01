@@ -1,23 +1,20 @@
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
-const isProd = process.env.NODE_ENV === 'production';
+const NODE_ENV = process.env.NODE_ENV?.trim() || 'dev';
 
 function parseEnv() {
-  const localEnv = path.resolve('.env');
-  const prodEnv = path.resolve('.env.prod');
+  const envFiles = [path.resolve(`.env.${NODE_ENV}`), path.resolve('.env')];
 
-  if (!fs.existsSync(localEnv) && !fs.existsSync(prodEnv)) {
+  const existingFile = envFiles.find(fs.existsSync);
+
+  if (!existingFile) {
     throw new Error(
-      'No environment file found. Please create a .env or .env.prod file.',
+      `No environment file found. Please create one of: ${envFiles.join(', ')}`,
     );
   }
 
-  const filePath = isProd && fs.existsSync(prodEnv) ? prodEnv : localEnv;
-
-  // const config = dotenv.parse(fs.readFileSync(filePath));
-
-  return { path: filePath };
+  return { path: existingFile };
 }
 
 export default parseEnv();

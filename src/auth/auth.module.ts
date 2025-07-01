@@ -10,13 +10,13 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { UserModule } from 'src/user/user.module';
 import { HttpModule } from '@nestjs/axios';
+import { RedisCacheModule } from '../db/redis-cache.module';
 
 const jwtModule = JwtModule.registerAsync({
   inject: [ConfigService],
   useFactory: async (configService: ConfigService) => {
     return {
-      secret: configService.get('SECRET', 'test123456'),
-      signOptions: { expiresIn: '4h' },
+      secret: configService.get('JWT_SECRET'),
     };
   },
 });
@@ -28,6 +28,7 @@ const jwtModule = JwtModule.registerAsync({
     PassportModule,
     jwtModule,
     UserModule,
+    RedisCacheModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, LocalStrategy, JwtStorage],

@@ -14,6 +14,7 @@ import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { MailerService } from '../mailer/mailer.service';
+import { instanceToPlain } from 'class-transformer';
 
 @Injectable()
 export class UserService {
@@ -97,11 +98,25 @@ export class UserService {
     return await this.userRepository.findOne({ where: { id } });
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<any> {
+    const user = await this.userRepository.findOneBy({ id });
+    if (!user) {
+      throw new NotFoundException(`User with id ${id} not found`);
+    }
+
+    const allowedFields = ['phone', 'birthday', 'city'];
+    for (const field of allowedFields) {
+      if (field in updateUserDto) {
+        user[field] = updateUserDto[field];
+      }
+    }
+
+    // Save after conversion, excluding @Exclude fields
+    const updatedUser = await this.userRepository.save(user);
+    return instanceToPlain(updatedUser);
   }
 
-  remove(id: number) {
+  remove(id: string) {
     return `This action removes a #${id} user`;
   }
 }

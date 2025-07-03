@@ -41,10 +41,6 @@ export class User {
   })
   gender: string;
 
-  @ApiProperty({ description: 'Birthdate', required: false })
-  @Column({ type: 'date', nullable: true })
-  birthdate?: Date;
-
   @ApiProperty({ description: 'Avatar URL', required: false })
   @Column({ type: 'text', nullable: true })
   avatar?: string;
@@ -59,6 +55,7 @@ export class User {
     enum: ['customer', 'provider', 'admin'],
     default: 'customer',
   })
+  @Exclude()
   role: string;
 
   @ApiProperty({
@@ -80,20 +77,20 @@ export class User {
   @Column({ type: 'boolean', default: false, name: 'phone_verified' })
   phoneVerified: boolean;
 
-  @ApiProperty({ description: 'Last login time', required: false })
   @Column({ type: 'timestamptz', nullable: true, name: 'last_login_at' })
+  @Exclude()
   lastLoginAt?: Date;
 
-  @ApiProperty({ description: 'Created at timestamp' })
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
+  @Exclude()
   createdAt: Date;
 
-  @ApiProperty({ description: 'Updated at timestamp' })
   @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
+  @Exclude()
   updatedAt: Date;
 
-  @ApiProperty({ description: 'Is deleted flag', default: false })
   @Column({ type: 'boolean', default: false, name: 'is_deleted' })
+  @Exclude()
   isDeleted: boolean;
 
   @BeforeInsert()

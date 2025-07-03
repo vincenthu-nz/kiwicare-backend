@@ -1,13 +1,6 @@
-import {
-  Controller,
-  Get,
-  Post,
-  UploadedFile,
-  UseInterceptors,
-} from '@nestjs/common';
-import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Controller, Get } from '@nestjs/common';
+import { ApiBody, ApiTags } from '@nestjs/swagger';
 import { AppService } from './app.service';
-import { FileInterceptor } from '@nestjs/platform-express';
 
 export const ApiFile =
   (fileName: string = 'file'): MethodDecorator =>
@@ -35,12 +28,12 @@ export class AppController {
     return this.appService.getHello();
   }
 
-  @Post('upload')
-  @ApiOperation({ summary: 'Upload file' })
-  @ApiConsumes('multipart/form-data')
-  @ApiFile()
-  @UseInterceptors(FileInterceptor('file'))
-  async uploadFile(@UploadedFile('file') file: any): Promise<any> {
-    console.log('0000', file);
-  }
+  // @Post('upload')
+  // @ApiOperation({ summary: 'Upload file' })
+  // @ApiConsumes('multipart/form-data')
+  // @ApiFile()
+  // @UseInterceptors(FileInterceptor('file'))
+  // async uploadFile(@UploadedFile('file') file: any): Promise<any> {
+  //   console.log('Upload file success!', file);
+  // }
 }

@@ -10,6 +10,7 @@ import { AuthModule } from './auth/auth.module';
 import { CategoryModule } from './category/category.module';
 import { TagModule } from './tag/tag.module';
 import { AppMailerModule } from './mailer/mailer.module';
+import { CosModule } from './cos/cos.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { AppMailerModule } from './mailer/mailer.module';
     CategoryModule,
     TagModule,
     AppMailerModule,
+    CosModule,
   ],
   controllers: [AppController],
   providers: [AppService],

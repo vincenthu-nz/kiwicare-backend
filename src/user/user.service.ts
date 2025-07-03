@@ -1,61 +1,74 @@
-import { compareSync } from 'bcryptjs';
 import { User } from './entities/user.entity';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Repository } from 'typeorm';
+import { PendingUser } from './entities/pending-users.entity';
+import * as bcrypt from 'bcrypt';
+import { randomUUID } from 'crypto';
+import { ConfigService } from '@nestjs/config';
+import { MailerService } from '../mailer/mailer.service';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(PendingUser)
+    private readonly pendingUserRepository: Repository<PendingUser>,
+    private readonly configService: ConfigService,
+    private readonly mailerService: MailerService,
   ) {}
 
-  async register(createUser: CreateUserDto) {
-    const { email } = createUser;
+  async register(createUserDto: CreateUserDto) {
+    const { email, password, firstName, lastName } = createUserDto;
 
-    const user = await this.userRepository.findOne({
+    const existingUser = await this.userRepository.findOne({
       where: { email },
     });
 
-    if (user) {
-      throw new HttpException('email already exists', HttpStatus.BAD_REQUEST);
+    if (existingUser) {
+      throw new HttpException(
+        'Email is already registered',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
-    const newUser = await this.userRepository.create(createUser);
-    return await this.userRepository.save(newUser);
+    // Delete any existing pending user record with the same email
+    await this.pendingUserRepository.delete({ email });
+
+    const verifyToken = randomUUID();
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    const pendingUser = this.pendingUserRepository.create({
+      email,
+      password: hashedPassword,
+      firstName: firstName ?? null,
+      lastName: lastName ?? null,
+      token: verifyToken,
+      expiresAt,
+    });
+
+    await this.pendingUserRepository.save(pendingUser);
+
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+    const verificationLink = `${frontendUrl}/verify-email?token=${verifyToken}`;
+
+    await this.mailerService.sendVerificationEmail(
+      email,
+      firstName,
+      verificationLink,
+    );
+
+    return {
+      message:
+        'Registration successful. Please check your email to verify your account.',
+    };
   }
-
-  // async registerByWechat(userInfo: WechatUserInfo) {
-  //   const { nickname, openid, head_img_url } = userInfo;
-  //   const newUser = await this.userRepository.create({
-  //     nickname,
-  //     openid,
-  //     avatar: head_img_url,
-  //   });
-  //   return await this.userRepository.save(newUser);
-  // }
-
-  //   async login(user: Partial<CreateUserDto>) {
-  //     const { username, password } = user;
-
-  //     const existUser = await this.userRepository
-  //       .createQueryBuilder('user')
-  //       .addSelect('user.password')
-  //       .where('user.username=:username', { username })
-  //       .getOne();
-
-  //     console.log('existUser', existUser);
-  //     if (
-  //       !existUser ||
-  //       !(await this.comparePassword(password, existUser.password))
-  //     ) {
-  //       throw new BadRequestException('用户名或者密码错误');
-  //     }
-  //     return existUser;
-  //   }
 
   findAll() {
     return `This action returns all user`;
@@ -75,9 +88,5 @@ export class UserService {
 
   remove(id: number) {
     return `This action removes a #${id} user`;
-  }
-
-  comparePassword(password, libPassword) {
-    return compareSync(password, libPassword);
   }
 }

@@ -17,21 +17,24 @@ export class CosService {
     Region: string,
     Key: string,
     Body: COS.UploadBody,
+    isPublic?: boolean,
   ): Promise<any> {
+    const params: COS.PutObjectParams = {
+      Bucket,
+      Region,
+      Key,
+      Body,
+    };
+
+    if (isPublic) {
+      params.ACL = 'public-read';
+    }
+
     return new Promise((resolve, reject) => {
-      this.cos.putObject(
-        {
-          Bucket,
-          Region,
-          Key,
-          Body,
-          ACL: 'public-read',
-        },
-        (err, data) => {
-          if (err) reject(err);
-          else resolve(data);
-        },
-      );
+      this.cos.putObject(params, (err, data) => {
+        if (err) reject(err);
+        else resolve(data);
+      });
     });
   }
 

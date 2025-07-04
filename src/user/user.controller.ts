@@ -25,6 +25,7 @@ import { UserInfoDto } from './dto/user-info.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CosService } from '../cos/cos.service';
+import { slugify } from 'transliteration';
 
 @ApiTags('user')
 @Controller('user')
@@ -63,14 +64,22 @@ export class UserController {
   @UseGuards(AuthGuard('jwt'))
   @UseInterceptors(FileInterceptor('file'))
   async uploadAvatar(@Req() req, @UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new Error('No file uploaded');
+    }
+
     const userId = req.user.id;
-    const key = `avatars/${userId}/${Date.now()}-${file.originalname}`;
+
+    const fileName = slugify(file.originalname);
+
+    const key = `avatars/${userId}/${Date.now()}-${fileName}`;
 
     await this.cosService.uploadFile(
       process.env.COS_BUCKET,
       process.env.COS_REGION,
       key,
       file.buffer,
+      true,
     );
 
     const url = `https://${process.env.COS_BUCKET}.cos.${process.env.COS_REGION}.myqcloud.com/${key}`;

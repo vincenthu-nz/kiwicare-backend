@@ -26,6 +26,8 @@ import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CosService } from '../cos/cos.service';
 import { slugify } from 'transliteration';
+import { plainToInstance } from 'class-transformer';
+import { User } from './entities/user.entity';
 
 @ApiTags('user')
 @Controller('user')
@@ -48,7 +50,7 @@ export class UserController {
   @UseGuards(AuthGuard('jwt'))
   @Get()
   async getUserInfo(@Req() req) {
-    return req.user;
+    return plainToInstance(User, req.user);
   }
 
   @ApiOperation({ summary: 'Update user info' })

@@ -11,6 +11,8 @@ import { CategoryModule } from './category/category.module';
 import { TagModule } from './tag/tag.module';
 import { AppMailerModule } from './mailer/mailer.module';
 import { CosModule } from './cos/cos.module';
+import { OrdersModule } from './orders/orders.module';
+import { MapboxModule } from './mapbox/mapbox.module';
 
 @Module({
   imports: [
@@ -37,6 +39,8 @@ import { CosModule } from './cos/cos.module';
     TagModule,
     AppMailerModule,
     CosModule,
+    OrdersModule,
+    MapboxModule,
   ],
   controllers: [AppController],
   providers: [AppService],

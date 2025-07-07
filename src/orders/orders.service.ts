@@ -5,15 +5,17 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { DataSource, FindOptionsWhere, In, Repository } from 'typeorm';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { MapboxService } from '../mapbox/mapbox.service';
 import { Order } from './entities/order.entity';
 import { ProviderService } from './entities/provider-services.entity';
-import { CancelOrderDto } from './dto/cancel-order.dto';
+import { ClosureOrderDto } from './dto/closure-order.dto';
 import {
   BLOCKED_STATUSES,
   CUSTOMER_CANCEL_ALLOWED_STATUSES,
+  ORDER_STATUSES,
+  OrderStatus,
   PROVIDER_CANCEL_ALLOWED_STATUSES,
 } from './order-status.constants';
 import { Customer } from './entities/customer.entity';
@@ -33,10 +35,10 @@ export class OrdersService {
     private readonly mapboxService: MapboxService,
     @InjectRepository(ProviderService)
     private readonly providerServiceRepo: Repository<ProviderService>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async createOrder(customerId: string, dto: CreateOrderDto) {
-    // Check for existing active orders
     const existingOrder = await this.orderRepo.findOne({
       where: {
         customerId,
@@ -113,7 +115,7 @@ export class OrdersService {
   async cancelOrder(
     user: { id: string; role: string },
     orderId: string,
-    dto: CancelOrderDto,
+    dto: ClosureOrderDto,
   ) {
     const order = await this.orderRepo.findOneBy({ id: orderId });
     if (!order) {
@@ -125,6 +127,8 @@ export class OrdersService {
         `Order in status '${order.status}' cannot be cancelled`,
       );
     }
+
+    order.closureType = 'cancel';
 
     if (user.role === 'customer') {
       const customer = await this.customerRepo.findOne({
@@ -165,12 +169,12 @@ export class OrdersService {
     } else if (user.role === 'admin') {
       // Admin can cancel any order in any status
       // No ownership or status check
-      order.cancelReason = 'Cancelled by system';
+      order.closureReason = 'Cancelled by system';
     } else {
       throw new ForbiddenException('You are not allowed to cancel orders');
     }
 
-    this.applyCancellation(order, user, dto.cancelReason);
+    this.applyCancellation(order, user, dto.reason);
 
     await this.orderRepo.save(order, { reload: true });
 
@@ -178,12 +182,165 @@ export class OrdersService {
       id: order.id,
       status: order.status,
       cancelledBy: {
-        id: order.cancelledById,
-        role: order.cancelledByRole,
+        id: order.closureById,
+        role: order.closureByRole,
       },
-      cancelReason: order.cancelReason,
-      cancelledAt: order.cancelledAt,
+      cancelReason: order.closureReason,
+      cancelledAt: order.closureAt,
     };
+  }
+
+  async rejectOrder(
+    user: { id: string; role: string },
+    orderId: string,
+    dto: ClosureOrderDto,
+  ) {
+    const order = await this.orderRepo.findOneBy({ id: orderId });
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    if (user.role === 'provider') {
+      const provider = await this.providerRepo.findOne({
+        where: { id: order.providerId },
+      });
+
+      if (provider.userId !== user.id) {
+        throw new ForbiddenException('This is not your order');
+      }
+
+      if (order.status !== 'pending') {
+        throw new BadRequestException('Only pending orders can be rejected');
+      }
+    } else if (user.role === 'admin') {
+      // admin can force reject any order status
+    } else {
+      throw new ForbiddenException('You are not allowed to reject orders');
+    }
+
+    order.status = 'rejected';
+    order.closureType = 'reject';
+    order.closureReason = dto.reason;
+    order.closureById = user.id;
+    order.closureByRole = user.role;
+    order.closureAt = new Date();
+
+    await this.orderRepo.save(order, { reload: true });
+
+    return {
+      id: order.id,
+      status: order.status,
+      rejectedBy: order.closureById,
+      rejectReason: order.closureReason,
+      rejectedAt: order.closureAt,
+    };
+  }
+
+  async getMyOrders(
+    user: { id: string; role: string },
+    status?: string,
+    page = 1,
+  ) {
+    const take = 10;
+    const skip = (page - 1) * take;
+
+    let targetId: string;
+
+    if (user.role === 'customer') {
+      const customer = await this.customerRepo.findOne({
+        where: { userId: user.id },
+      });
+
+      if (!customer) {
+        throw new ForbiddenException('Customer record not found');
+      }
+
+      targetId = customer.id;
+
+      const [data, total] = await this.orderRepo.findAndCount({
+        where: this.buildOrderWhere('customer', targetId, status),
+        order: { createdAt: 'DESC' },
+        skip,
+        take,
+      });
+
+      return {
+        role: 'customer',
+        page,
+        pageSize: take,
+        total,
+        data,
+      };
+    }
+
+    if (user.role === 'provider') {
+      const provider = await this.providerRepo.findOne({
+        where: { userId: user.id },
+      });
+
+      if (!provider) {
+        throw new ForbiddenException('Provider record not found');
+      }
+
+      targetId = provider.id;
+
+      const [data, total] = await this.orderRepo.findAndCount({
+        where: this.buildOrderWhere('provider', targetId, status),
+        relations: [
+          'customer',
+          'customer.user',
+          'provider',
+          'provider.user',
+          'service',
+        ],
+        order: { createdAt: 'DESC' },
+        skip,
+        take,
+      });
+
+      const mappedData = data.map((order) => ({
+        id: order.id,
+        status: order.status,
+        scheduledStart: order.scheduledStart,
+        serviceAddress: order.serviceAddress,
+        serviceLatitude: order.serviceLatitude,
+        serviceLongitude: order.serviceLongitude,
+        distanceM: order.distanceM,
+        durationS: order.durationS,
+        serviceFee: order.serviceFee,
+        travelFee: order.travelFee,
+        totalAmount: order.totalAmount,
+        routeGeometry: order.routeGeometry,
+        note: order.note,
+        createdAt: order.createdAt,
+
+        customer: order.customer && {
+          id: order.customer.id,
+          name: order.customer.user.name,
+          avatar: order.customer.user.avatar,
+        },
+
+        provider: order.provider && {
+          id: order.provider.id,
+          name: order.provider.user.name,
+          avatar: order.provider.user.avatar,
+        },
+
+        service: order.service && {
+          id: order.service.id,
+          name: order.service.name,
+        },
+      }));
+
+      return {
+        page,
+        pageSize: take,
+        total,
+        data: mappedData,
+      };
+    }
+
+    throw new ForbiddenException('Your role cannot query orders');
   }
 
   private applyCancellation(
@@ -191,10 +348,25 @@ export class OrdersService {
     user: { id: string; role: string },
     reason: string,
   ) {
-    order.cancelledById = user.id;
-    order.cancelledByRole = user.role;
-    order.cancelReason = reason;
+    order.closureById = user.id;
+    order.closureByRole = user.role;
+    order.closureReason = reason;
     order.status = 'cancelled';
-    order.cancelledAt = new Date();
+    order.closureAt = new Date();
+  }
+
+  private buildOrderWhere(
+    role: 'customer' | 'provider',
+    id: string,
+    status?: string,
+  ): FindOptionsWhere<Order> {
+    const where: FindOptionsWhere<Order> =
+      role === 'customer' ? { customerId: id } : { providerId: id };
+
+    if (status && ORDER_STATUSES.includes(status as any)) {
+      where.status = status as OrderStatus;
+    }
+
+    return where;
   }
 }

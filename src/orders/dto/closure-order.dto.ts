@@ -1,7 +1,7 @@
 import { IsOptional, IsString } from 'class-validator';
 
-export class CancelOrderDto {
+export class ClosureOrderDto {
   @IsOptional()
   @IsString()
-  cancelReason?: string;
+  reason?: string;
 }

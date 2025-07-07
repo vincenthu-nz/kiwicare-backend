@@ -4,11 +4,14 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { Exclude } from 'class-transformer';
+import { Customer } from '../../orders/entities/customer.entity';
+import { Provider } from '../../orders/entities/provider.entity';
 
 @Entity('users')
 export class User {
@@ -92,6 +95,12 @@ export class User {
   @Column({ type: 'boolean', default: false, name: 'is_deleted' })
   @Exclude()
   isDeleted: boolean;
+
+  @OneToOne(() => Customer, (customer) => customer.user)
+  customer: Customer;
+
+  @OneToOne(() => Provider, (provider) => provider.user)
+  provider: Provider;
 
   @BeforeInsert()
   async hashPassword() {

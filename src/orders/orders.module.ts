@@ -8,10 +8,17 @@ import { ProviderService } from './entities/provider-services.entity';
 import { AuthModule } from '../auth/auth.module';
 import { Customer } from './entities/customer.entity';
 import { Provider } from './entities/provider.entity';
+import { Service } from './entities/service.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Order, Customer, Provider, ProviderService]),
+    TypeOrmModule.forFeature([
+      Order,
+      Customer,
+      Provider,
+      Service,
+      ProviderService,
+    ]),
     MapboxModule,
     AuthModule,
   ],

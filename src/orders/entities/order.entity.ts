@@ -4,6 +4,7 @@ import {
   Entity,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { ORDER_STATUSES, OrderStatus } from '../order-status.constants';
 
 @Entity('orders')
 export class Order {
@@ -49,12 +50,28 @@ export class Order {
   @Column({ type: 'timestamptz', name: 'scheduled_start' })
   scheduledStart: Date;
 
-  @Column({ type: 'text', default: 'pending' })
-  status: string;
+  @Column({
+    type: 'enum',
+    enum: ORDER_STATUSES,
+    default: 'pending',
+  })
+  status: OrderStatus;
 
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt: Date;
 
   @CreateDateColumn({ type: 'text' })
   note: string;
+
+  @Column({ type: 'uuid', name: 'cancelled_by_id', nullable: true })
+  cancelledById?: string;
+
+  @Column({ type: 'text', name: 'cancelled_by_role', nullable: true })
+  cancelledByRole?: string;
+
+  @Column({ type: 'text', name: 'cancel_reason', nullable: true })
+  cancelReason?: string;
+
+  @Column({ type: 'timestamptz', name: 'cancelled_at', nullable: true })
+  cancelledAt?: Date;
 }

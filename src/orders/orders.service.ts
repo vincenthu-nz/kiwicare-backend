@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, FindOptionsWhere, In, Repository } from 'typeorm';
+import { FindOptionsWhere, In, Repository } from 'typeorm';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { MapboxService } from '../mapbox/mapbox.service';
 import { Order } from './entities/order.entity';
@@ -20,6 +20,11 @@ import {
 } from './order-status.constants';
 import { Customer } from './entities/customer.entity';
 import { Provider } from './entities/provider.entity';
+import { calculateDistance } from '../core/lib/distance.util';
+import { StartOrderDto } from './dto/start-order.dto';
+import { OrdersPolicy } from './policies/orders.policy';
+import { Service } from './entities/service.entity';
+import { CompleteOrderDto } from './dto/complete-order.dto';
 
 @Injectable()
 export class OrdersService {
@@ -32,10 +37,12 @@ export class OrdersService {
     private readonly customerRepo: Repository<Customer>,
     @InjectRepository(Provider)
     private readonly providerRepo: Repository<Provider>,
+    @InjectRepository(Service)
+    private readonly serviceRepo: Repository<Service>,
     private readonly mapboxService: MapboxService,
     @InjectRepository(ProviderService)
     private readonly providerServiceRepo: Repository<ProviderService>,
-    private readonly dataSource: DataSource,
+    private readonly ordersPolicy: OrdersPolicy,
   ) {}
 
   async createOrder(customerId: string, dto: CreateOrderDto) {
@@ -89,7 +96,7 @@ export class OrdersService {
       scheduledStart: dto.scheduledStart,
       note: dto.note,
       distanceM: distance,
-      durationS: duration,
+      driveDurationS: duration,
       routeGeometry: geometry,
       serviceFee,
       travelFee,
@@ -306,7 +313,7 @@ export class OrdersService {
         serviceLatitude: order.serviceLatitude,
         serviceLongitude: order.serviceLongitude,
         distanceM: order.distanceM,
-        durationS: order.durationS,
+        durationS: order.driveDurationS,
         serviceFee: order.serviceFee,
         travelFee: order.travelFee,
         totalAmount: order.totalAmount,
@@ -341,6 +348,141 @@ export class OrdersService {
     }
 
     throw new ForbiddenException('Your role cannot query orders');
+  }
+
+  async acceptOrder(user: { id: string; role: string }, orderId: string) {
+    const order = await this.ordersPolicy.ensureProviderOwnsOrder(
+      user.id,
+      orderId,
+    );
+
+    if (order.status !== 'pending') {
+      throw new BadRequestException('Only pending orders can be accepted');
+    }
+
+    order.status = 'accepted';
+    order.updatedAt = new Date();
+
+    await this.orderRepo.save(order);
+
+    return {
+      id: order.id,
+      status: order.status,
+      updatedAt: order.updatedAt,
+    };
+  }
+
+  async startOrder(
+    user: { id: string; role: string },
+    orderId: string,
+    dto: StartOrderDto,
+  ) {
+    const order = await this.ordersPolicy.ensureProviderOwnsOrder(
+      user.id,
+      orderId,
+    );
+
+    if (order.status !== 'accepted') {
+      throw new BadRequestException('Only accepted orders can be started');
+    }
+
+    const distanceMeters = calculateDistance(
+      dto.currentLatitude,
+      dto.currentLongitude,
+      order.serviceLatitude,
+      order.serviceLongitude,
+    );
+
+    if (distanceMeters > 200) {
+      throw new BadRequestException(
+        'You are too far from the service address to start',
+      );
+    }
+
+    order.status = 'in_progress';
+    order.startedAt = new Date();
+    order.startLatitude = dto.currentLatitude;
+    order.startLongitude = dto.currentLongitude;
+    order.updatedAt = new Date();
+
+    await this.orderRepo.save(order);
+
+    return {
+      id: order.id,
+      status: order.status,
+      startedAt: order.startedAt,
+    };
+  }
+
+  async completeOrder(
+    user: { id: string; role: string },
+    orderId: string,
+    dto: CompleteOrderDto,
+  ) {
+    const order = await this.ordersPolicy.ensureProviderOwnsOrder(
+      user.id,
+      orderId,
+    );
+
+    if (order.status !== 'in_progress') {
+      throw new BadRequestException('Only in-progress orders can be completed');
+    }
+
+    // ⑤ 必须有 startedAt
+    if (!order.startedAt) {
+      throw new BadRequestException('Order has not been started');
+    }
+
+    // ⑥ 校验服务时间
+    const providerService = await this.providerServiceRepo.findOne({
+      where: {
+        providerId: order.providerId,
+        serviceId: order.serviceId,
+      },
+    });
+
+    if (!providerService) {
+      throw new BadRequestException('Provider service configuration not found');
+    }
+
+    const elapsedMinutes =
+      (new Date().getTime() - order.startedAt.getTime()) / (1000 * 60);
+    if (elapsedMinutes < providerService.durationMinutes) {
+      throw new BadRequestException(
+        `Service time too short: must be at least ${providerService.durationMinutes} minutes`,
+      );
+    }
+
+    // ⑦ 校验位置
+    const distanceMeters = calculateDistance(
+      dto.currentLatitude,
+      dto.currentLongitude,
+      order.serviceLatitude,
+      order.serviceLongitude,
+    );
+
+    if (distanceMeters > 200) {
+      throw new BadRequestException(
+        `You are too far from the service address to complete the order`,
+      );
+    }
+
+    // ⑧ 更新
+    order.status = 'completed';
+    order.completedAt = new Date();
+    order.completedLatitude = dto.currentLatitude;
+    order.completedLongitude = dto.currentLongitude;
+    order.actualServiceMinutes = Math.round(elapsedMinutes);
+    order.updatedAt = new Date();
+
+    await this.orderRepo.save(order);
+
+    return {
+      id: order.id,
+      status: order.status,
+      completedAt: order.completedAt,
+      actualDurationMinutes: order.actualServiceMinutes,
+    };
   }
 
   private applyCancellation(

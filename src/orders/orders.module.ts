@@ -9,6 +9,7 @@ import { AuthModule } from '../auth/auth.module';
 import { Customer } from './entities/customer.entity';
 import { Provider } from './entities/provider.entity';
 import { Service } from './entities/service.entity';
+import { OrdersPolicy } from './policies/orders.policy';
 
 @Module({
   imports: [
@@ -22,7 +23,7 @@ import { Service } from './entities/service.entity';
     MapboxModule,
     AuthModule,
   ],
-  providers: [OrdersService],
+  providers: [OrdersService, OrdersPolicy],
   controllers: [OrdersController],
 })
 export class OrdersModule {}

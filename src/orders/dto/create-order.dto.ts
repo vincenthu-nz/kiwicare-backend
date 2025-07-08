@@ -5,7 +5,6 @@ import {
   IsString,
   IsUUID,
 } from 'class-validator';
-import { Type } from 'class-transformer';
 
 export class CreateOrderDto {
   @IsUUID()
@@ -20,19 +19,15 @@ export class CreateOrderDto {
   @IsString()
   serviceAddress: string;
 
-  @Type(() => Number)
   @IsNumber()
   serviceLatitude: number;
 
-  @Type(() => Number)
   @IsNumber()
   serviceLongitude: number;
 
-  @Type(() => Number)
   @IsNumber()
   providerLatitude: number;
 
-  @Type(() => Number)
   @IsNumber()
   providerLongitude: number;
 

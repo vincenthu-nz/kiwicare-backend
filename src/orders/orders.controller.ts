@@ -14,7 +14,9 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiOperation } from '@nestjs/swagger';
 import { ClosureOrderDto } from './dto/closure-order.dto';
-import { RolesGuard } from '../auth/role.guard';
+import { Roles, RolesGuard } from '../auth/role.guard';
+import { StartOrderDto } from './dto/start-order.dto';
+import { CompleteOrderDto } from './dto/complete-order.dto';
 
 @Controller('orders')
 export class OrdersController {
@@ -59,5 +61,34 @@ export class OrdersController {
     @Query('page') page = 1,
   ) {
     return this.ordersService.getMyOrders(req.user, status, +page);
+  }
+
+  @Patch(':id/accept')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('provider')
+  async acceptOrder(@Req() req, @Param('id') id: string) {
+    return this.ordersService.acceptOrder(req.user, id);
+  }
+
+  @Patch(':id/start')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('provider')
+  async startOrder(
+    @Req() req,
+    @Param('id') id: string,
+    @Body() dto: StartOrderDto,
+  ) {
+    return this.ordersService.startOrder(req.user, id, dto);
+  }
+
+  @Patch(':id/complete')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('provider')
+  async completeOrder(
+    @Req() req,
+    @Param('id') id: string,
+    @Body() dto: CompleteOrderDto,
+  ) {
+    return this.ordersService.completeOrder(req.user, id, dto);
   }
 }

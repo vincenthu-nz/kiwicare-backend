@@ -49,8 +49,8 @@ export class Order {
   @Column({ type: 'integer', name: 'distance_m' })
   distanceM: number;
 
-  @Column({ type: 'integer', name: 'duration_s' })
-  durationS: number;
+  @Column({ type: 'integer', name: 'drive_duration_s' })
+  driveDurationS: number;
 
   @Column({ type: 'numeric', name: 'service_fee' })
   serviceFee: number;
@@ -77,6 +77,9 @@ export class Order {
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt: Date;
 
+  @CreateDateColumn({ type: 'timestamptz', name: 'updated_at' })
+  updatedAt: Date;
+
   @Column({ type: 'text' })
   note: string;
 
@@ -94,4 +97,33 @@ export class Order {
 
   @Column({ type: 'timestamptz', nullable: true, name: 'closure_at' })
   closureAt?: Date;
+
+  @Column({ type: 'timestamptz', nullable: true, name: 'started_at' })
+  startedAt: Date;
+
+  @Column({ type: 'double precision', nullable: true, name: 'start_latitude' })
+  startLatitude: number;
+
+  @Column({ type: 'double precision', nullable: true, name: 'start_longitude' })
+  startLongitude: number;
+
+  @Column({ type: 'integer', nullable: true, name: 'actual_service_m' })
+  actualServiceMinutes: number;
+
+  @Column({ type: 'timestamptz', nullable: true, name: 'completed_at' })
+  completedAt?: Date;
+
+  @Column({
+    type: 'double precision',
+    nullable: true,
+    name: 'completed_latitude',
+  })
+  completedLatitude?: number;
+
+  @Column({
+    type: 'double precision',
+    nullable: true,
+    name: 'completed_longitude',
+  })
+  completedLongitude?: number;
 }

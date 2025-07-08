@@ -15,8 +15,6 @@ import { randomUUID } from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { MailerService } from '../mailer/mailer.service';
 import { instanceToPlain } from 'class-transformer';
-import { CosService } from '../cos/cos.service';
-import { omit } from 'lodash';
 
 @Injectable()
 export class UserService {
@@ -27,23 +25,7 @@ export class UserService {
     private readonly pendingUserRepository: Repository<PendingUser>,
     private readonly configService: ConfigService,
     private readonly mailerService: MailerService,
-    private readonly cosService: CosService,
   ) {}
-
-  async buildUserProfile(user: User): Promise<any> {
-    const result = omit(user, ['password']);
-
-    result.avatar = null;
-    if (user.avatar) {
-      result.avatar = await this.cosService.getSignedUrl(
-        process.env.COS_BUCKET,
-        process.env.COS_REGION,
-        user.avatar,
-      );
-    }
-
-    return result;
-  }
 
   async register(createUserDto: CreateUserDto) {
     const { email, password, firstName, lastName } = createUserDto;

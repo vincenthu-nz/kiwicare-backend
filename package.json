@@ -21,6 +21,8 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "latest",
+    "@aws-sdk/s3-request-presigner": "latest",
     "@nestjs-modules/mailer": "latest",
     "@nestjs/axios": "latest",
     "@nestjs/cache-manager": "latest",
@@ -37,7 +39,6 @@
     "cheerio": "latest",
     "class-transformer": "latest",
     "class-validator": "latest",
-    "cos-nodejs-sdk-v5": "latest",
     "ioredis": "latest",
     "lodash": "latest",
     "mapbox-gl": "latest",

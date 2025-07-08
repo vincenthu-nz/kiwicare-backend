@@ -10,7 +10,7 @@ import { AuthModule } from './auth/auth.module';
 import { CategoryModule } from './category/category.module';
 import { TagModule } from './tag/tag.module';
 import { AppMailerModule } from './mailer/mailer.module';
-import { CosModule } from './cos/cos.module';
+import { AwsS3Module } from './aws/aws-s3.module';
 import { OrdersModule } from './orders/orders.module';
 import { MapboxModule } from './mapbox/mapbox.module';
 
@@ -38,7 +38,7 @@ import { MapboxModule } from './mapbox/mapbox.module';
     CategoryModule,
     TagModule,
     AppMailerModule,
-    CosModule,
+    AwsS3Module,
     OrdersModule,
     MapboxModule,
   ],

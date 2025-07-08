@@ -24,8 +24,7 @@ import {
 import { UserInfoDto } from './dto/user-info.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { CosService } from '../cos/cos.service';
-import { slugify } from 'transliteration';
+import { AwsS3Service } from '../aws/aws-s3.service';
 import { plainToInstance } from 'class-transformer';
 import { User } from './entities/user.entity';
 
@@ -34,7 +33,7 @@ import { User } from './entities/user.entity';
 export class UserController {
   constructor(
     private readonly userService: UserService,
-    private readonly cosService: CosService,
+    private readonly awss3Service: AwsS3Service,
   ) {}
 
   @ApiOperation({ summary: 'register user' })
@@ -72,23 +71,14 @@ export class UserController {
 
     const userId = req.user.id;
 
-    const fileName = slugify(file.originalname);
-
-    const key = `avatars/${userId}/${Date.now()}-${fileName}`;
-
-    await this.cosService.uploadFile(
-      process.env.COS_BUCKET,
-      process.env.COS_REGION,
-      key,
-      file.buffer,
-      true,
-    );
-
-    const url = `https://${process.env.COS_BUCKET}.cos.${process.env.COS_REGION}.myqcloud.com/${key}`;
+    const { url } = await this.awss3Service.uploadFile(userId, file);
 
     await this.userService.updateAvatar(userId, url);
 
-    return { message: 'Avatar uploaded successfully', url };
+    return {
+      message: 'Avatar uploaded successfully',
+      url,
+    };
   }
 
   @Get(':id')

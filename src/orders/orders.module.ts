@@ -10,6 +10,7 @@ import { Customer } from './entities/customer.entity';
 import { Provider } from './entities/provider.entity';
 import { Service } from './entities/service.entity';
 import { OrdersPolicy } from './policies/orders.policy';
+import { User } from '../user/entities/user.entity';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { OrdersPolicy } from './policies/orders.policy';
       Customer,
       Provider,
       Service,
+      User,
       ProviderService,
     ]),
     MapboxModule,

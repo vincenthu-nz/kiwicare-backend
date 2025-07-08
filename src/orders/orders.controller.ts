@@ -26,8 +26,7 @@ export class OrdersController {
   @UseGuards(AuthGuard('jwt'))
   @Post()
   async createOrder(@Req() req, @Body() dto: CreateOrderDto) {
-    const customerId = req.body.customerId;
-    return this.ordersService.createOrder(customerId, dto);
+    return this.ordersService.createOrder(req.user, dto);
   }
 
   @ApiOperation({ summary: 'Cancel orders' })

@@ -8,7 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, In, Repository } from 'typeorm';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { MapboxService } from '../mapbox/mapbox.service';
-import { Order } from './entities/order.entity';
+import { Order, PaymentStatus } from './entities/order.entity';
 import { ProviderService } from './entities/provider-services.entity';
 import { ClosureOrderDto } from './dto/closure-order.dto';
 import {
@@ -20,17 +20,21 @@ import {
 } from './order-status.constants';
 import { Customer } from './entities/customer.entity';
 import { Provider } from './entities/provider.entity';
-import { calculateDistance } from '../core/lib/distance.util';
+import { calculateDistance } from '../core/utils/distance.util';
 import { StartOrderDto } from './dto/start-order.dto';
 import { OrdersPolicy } from './policies/orders.policy';
 import { Service } from './entities/service.entity';
 import { CompleteOrderDto } from './dto/complete-order.dto';
+import { User } from '../user/entities/user.entity';
+import { nzdToCents } from '../core/utils/currency.util';
 
 @Injectable()
 export class OrdersService {
   private readonly RATE_PER_KM = 1;
 
   constructor(
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
     @InjectRepository(Order)
     private readonly orderRepo: Repository<Order>,
     @InjectRepository(Customer)
@@ -45,10 +49,20 @@ export class OrdersService {
     private readonly ordersPolicy: OrdersPolicy,
   ) {}
 
-  async createOrder(customerId: string, dto: CreateOrderDto) {
+  async createOrder(user: User, dto: CreateOrderDto) {
+    const customer = await this.customerRepo.findOne({
+      where: { userId: user.id },
+    });
+
+    if (!customer) {
+      throw new NotFoundException('Customer not found');
+    }
+
+    const customerId = customer.id;
+
     const existingOrder = await this.orderRepo.findOne({
       where: {
-        customerId,
+        customerId: customerId,
         status: In(['pending', 'accepted']),
       },
     });
@@ -73,7 +87,7 @@ export class OrdersService {
       );
     }
 
-    const serviceFee = Number(providerService.price);
+    const serviceFee = nzdToCents(providerService.price);
 
     const { distance, duration, geometry } =
       await this.mapboxService.getDirections(
@@ -83,8 +97,15 @@ export class OrdersService {
 
     const distanceKm = distance / 1000;
 
-    const travelFee = Math.round(distanceKm * this.RATE_PER_KM * 100);
+    const travelFee = nzdToCents(distanceKm * this.RATE_PER_KM);
     const totalAmount = serviceFee + travelFee;
+
+    if (user.balance < totalAmount) {
+      throw new BadRequestException('Insufficient balance. Please recharge.');
+    }
+
+    user.balance -= totalAmount;
+    await this.userRepo.save(user);
 
     const order = this.orderRepo.create({
       providerId: dto.providerId,
@@ -102,6 +123,7 @@ export class OrdersService {
       travelFee,
       totalAmount,
       status: 'pending',
+      paymentStatus: PaymentStatus.PAID,
     });
 
     await this.orderRepo.save(order);
@@ -113,6 +135,7 @@ export class OrdersService {
       travelFee,
       serviceFee,
       totalAmount,
+      balance: user.balance,
       status: order.status,
       scheduledStart: order.scheduledStart,
       createdAt: order.createdAt,
@@ -428,12 +451,10 @@ export class OrdersService {
       throw new BadRequestException('Only in-progress orders can be completed');
     }
 
-    // ⑤ 必须有 startedAt
     if (!order.startedAt) {
       throw new BadRequestException('Order has not been started');
     }
 
-    // ⑥ 校验服务时间
     const providerService = await this.providerServiceRepo.findOne({
       where: {
         providerId: order.providerId,
@@ -453,7 +474,6 @@ export class OrdersService {
       );
     }
 
-    // ⑦ 校验位置
     const distanceMeters = calculateDistance(
       dto.currentLatitude,
       dto.currentLongitude,
@@ -467,7 +487,6 @@ export class OrdersService {
       );
     }
 
-    // ⑧ 更新
     order.status = 'completed';
     order.completedAt = new Date();
     order.completedLatitude = dto.currentLatitude;

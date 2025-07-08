@@ -11,6 +11,12 @@ import { Customer } from './customer.entity';
 import { Provider } from './provider.entity';
 import { Service } from './service.entity';
 
+export enum PaymentStatus {
+  UNPAID = 'unpaid',
+  PAID = 'paid',
+  REFUNDED = 'refunded',
+}
+
 @Entity('orders')
 export class Order {
   @PrimaryGeneratedColumn('uuid')
@@ -126,4 +132,12 @@ export class Order {
     name: 'completed_longitude',
   })
   completedLongitude?: number;
+
+  @Column({
+    name: 'payment_status',
+    type: 'enum',
+    enum: PaymentStatus,
+    default: PaymentStatus.UNPAID,
+  })
+  paymentStatus: PaymentStatus;
 }

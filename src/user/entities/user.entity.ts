@@ -61,6 +61,9 @@ export class User {
   @Exclude()
   role: string;
 
+  @Column({ type: 'integer', default: 0 })
+  balance: number;
+
   @ApiProperty({
     description: 'User status',
     default: 'active',

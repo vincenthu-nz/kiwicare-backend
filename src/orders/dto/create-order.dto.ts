@@ -11,9 +11,6 @@ export class CreateOrderDto {
   providerId: string;
 
   @IsUUID()
-  customerId: string;
-
-  @IsUUID()
   serviceId: string;
 
   @IsString()

@@ -6,16 +6,11 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { ORDER_STATUSES, OrderStatus } from '../order-status.constants';
 import { Customer } from './customer.entity';
 import { Provider } from './provider.entity';
 import { Service } from './service.entity';
-
-export enum PaymentStatus {
-  UNPAID = 'unpaid',
-  PAID = 'paid',
-  REFUNDED = 'refunded',
-}
+import { PaymentStatus } from '../../core/enums/payment-status.enum';
+import { ClosureType, OrderStatus } from '../../core/enums/order.enum';
 
 @Entity('orders')
 export class Order {
@@ -75,8 +70,8 @@ export class Order {
 
   @Column({
     type: 'enum',
-    enum: ORDER_STATUSES,
-    default: 'pending',
+    enum: OrderStatus,
+    default: OrderStatus.PENDING,
   })
   status: OrderStatus;
 
@@ -90,7 +85,7 @@ export class Order {
   note: string;
 
   @Column({ type: 'text', nullable: true, name: 'closure_type' })
-  closureType?: 'cancel' | 'reject';
+  closureType?: ClosureType;
 
   @Column({ type: 'text', nullable: true, name: 'closure_reason' })
   closureReason?: string;

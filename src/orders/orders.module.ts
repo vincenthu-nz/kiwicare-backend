@@ -11,6 +11,7 @@ import { Provider } from './entities/provider.entity';
 import { Service } from './entities/service.entity';
 import { OrdersPolicy } from './policies/orders.policy';
 import { User } from '../user/entities/user.entity';
+import { Review } from './entities/review.entity';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { User } from '../user/entities/user.entity';
       Provider,
       Service,
       User,
+      Review,
       ProviderService,
     ]),
     MapboxModule,

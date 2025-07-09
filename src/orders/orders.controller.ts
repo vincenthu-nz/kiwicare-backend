@@ -17,6 +17,7 @@ import { ClosureOrderDto } from './dto/closure-order.dto';
 import { Roles, RolesGuard } from '../auth/role.guard';
 import { StartOrderDto } from './dto/start-order.dto';
 import { CompleteOrderDto } from './dto/complete-order.dto';
+import { CreateReviewDto } from './dto/create-review.dto';
 
 @Controller('orders')
 export class OrdersController {
@@ -62,6 +63,7 @@ export class OrdersController {
     return this.ordersService.getMyOrders(req.user, status, +page);
   }
 
+  @ApiOperation({ summary: 'Accept orders' })
   @Patch(':id/accept')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('provider')
@@ -69,6 +71,7 @@ export class OrdersController {
     return this.ordersService.acceptOrder(req.user, id);
   }
 
+  @ApiOperation({ summary: 'Start orders' })
   @Patch(':id/start')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('provider')
@@ -80,6 +83,7 @@ export class OrdersController {
     return this.ordersService.startOrder(req.user, id, dto);
   }
 
+  @ApiOperation({ summary: 'Complete orders' })
   @Patch(':id/complete')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('provider')
@@ -89,5 +93,18 @@ export class OrdersController {
     @Body() dto: CompleteOrderDto,
   ) {
     return this.ordersService.completeOrder(req.user, id, dto);
+  }
+
+  @ApiOperation({ summary: 'Comment orders' })
+  @Post(':id/review')
+  @UseGuards(AuthGuard('jwt'))
+  async addReview(
+    @Param('id') id: string,
+    @Body() dto: CreateReviewDto,
+    @Req() req,
+  ) {
+    const userId = req.user.id;
+    await this.ordersService.addReview(id, userId, dto);
+    return { message: 'Review submitted' };
   }
 }

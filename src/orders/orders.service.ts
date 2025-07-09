@@ -8,25 +8,28 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, In, Repository } from 'typeorm';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { MapboxService } from '../mapbox/mapbox.service';
-import { Order, PaymentStatus } from './entities/order.entity';
+import { Order } from './entities/order.entity';
 import { ProviderService } from './entities/provider-services.entity';
 import { ClosureOrderDto } from './dto/closure-order.dto';
-import {
-  BLOCKED_STATUSES,
-  CUSTOMER_CANCEL_ALLOWED_STATUSES,
-  ORDER_STATUSES,
-  OrderStatus,
-  PROVIDER_CANCEL_ALLOWED_STATUSES,
-} from './order-status.constants';
+
 import { Customer } from './entities/customer.entity';
 import { Provider } from './entities/provider.entity';
 import { calculateDistance } from '../core/utils/distance.util';
 import { StartOrderDto } from './dto/start-order.dto';
 import { OrdersPolicy } from './policies/orders.policy';
-import { Service } from './entities/service.entity';
 import { CompleteOrderDto } from './dto/complete-order.dto';
 import { User } from '../user/entities/user.entity';
 import { nzdToCents } from '../core/utils/currency.util';
+import { CreateReviewDto } from './dto/create-review.dto';
+import { Review } from './entities/review.entity';
+import { PaymentStatus } from '../core/enums/payment-status.enum';
+import {
+  BLOCKED_STATUSES,
+  ClosureType,
+  CUSTOMER_CANCEL_ALLOWED_STATUSES,
+  OrderStatus,
+  PROVIDER_CANCEL_ALLOWED_STATUSES,
+} from '../core/enums/order.enum';
 
 @Injectable()
 export class OrdersService {
@@ -41,8 +44,8 @@ export class OrdersService {
     private readonly customerRepo: Repository<Customer>,
     @InjectRepository(Provider)
     private readonly providerRepo: Repository<Provider>,
-    @InjectRepository(Service)
-    private readonly serviceRepo: Repository<Service>,
+    @InjectRepository(Review)
+    private readonly reviewRepo: Repository<Review>,
     private readonly mapboxService: MapboxService,
     @InjectRepository(ProviderService)
     private readonly providerServiceRepo: Repository<ProviderService>,
@@ -122,7 +125,7 @@ export class OrdersService {
       serviceFee,
       travelFee,
       totalAmount,
-      status: 'pending',
+      status: OrderStatus.PENDING,
       paymentStatus: PaymentStatus.PAID,
     });
 
@@ -158,7 +161,7 @@ export class OrdersService {
       );
     }
 
-    order.closureType = 'cancel';
+    order.closureType = ClosureType.CANCEL;
 
     if (user.role === 'customer') {
       const customer = await this.customerRepo.findOne({
@@ -248,8 +251,8 @@ export class OrdersService {
       throw new ForbiddenException('You are not allowed to reject orders');
     }
 
-    order.status = 'rejected';
-    order.closureType = 'reject';
+    order.status = OrderStatus.REJECTED;
+    order.closureType = ClosureType.REJECT;
     order.closureReason = dto.reason;
     order.closureById = user.id;
     order.closureByRole = user.role;
@@ -383,7 +386,7 @@ export class OrdersService {
       throw new BadRequestException('Only pending orders can be accepted');
     }
 
-    order.status = 'accepted';
+    order.status = OrderStatus.ACCEPTED;
     order.updatedAt = new Date();
 
     await this.orderRepo.save(order);
@@ -422,7 +425,7 @@ export class OrdersService {
       );
     }
 
-    order.status = 'in_progress';
+    order.status = OrderStatus.IN_PROGRESS;
     order.startedAt = new Date();
     order.startLatitude = dto.currentLatitude;
     order.startLongitude = dto.currentLongitude;
@@ -487,7 +490,7 @@ export class OrdersService {
       );
     }
 
-    order.status = 'completed';
+    order.status = OrderStatus.COMPLETED;
     order.completedAt = new Date();
     order.completedLatitude = dto.currentLatitude;
     order.completedLongitude = dto.currentLongitude;
@@ -504,6 +507,59 @@ export class OrdersService {
     };
   }
 
+  async addReview(orderId: string, userId: string, dto: CreateReviewDto) {
+    const order = await this.orderRepo.findOne({
+      where: { id: orderId },
+      relations: ['customer', 'customer.user', 'provider', 'provider.user'],
+    });
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    if (order.status !== 'completed') {
+      throw new BadRequestException('Only completed orders can be reviewed');
+    }
+
+    // Determine the role of the user making the request
+    let authorRole: 'customer' | 'provider';
+    let targetId: string;
+
+    if (order.customer.user.id === userId) {
+      authorRole = 'customer';
+      targetId = order.provider.user.id;
+    } else if (order.provider.user.id === userId) {
+      authorRole = 'provider';
+      targetId = order.customer.user.id;
+    } else {
+      throw new ForbiddenException('You are not part of this order');
+    }
+
+    //  Ensure the current role has not reviewed this order yet
+    const existing = await this.reviewRepo.findOne({
+      where: {
+        orderId,
+        authorRole,
+      },
+    });
+
+    if (existing) {
+      throw new BadRequestException(
+        `You (${authorRole}) have already reviewed this order`,
+      );
+    }
+
+    await this.reviewRepo.insert({
+      orderId,
+      authorId: userId,
+      targetId,
+      authorRole,
+      rating: dto.rating,
+      comment: dto.comment,
+      images: dto.images || [],
+    });
+  }
+
   private applyCancellation(
     order: Order,
     user: { id: string; role: string },
@@ -512,7 +568,7 @@ export class OrdersService {
     order.closureById = user.id;
     order.closureByRole = user.role;
     order.closureReason = reason;
-    order.status = 'cancelled';
+    order.status = OrderStatus.CANCELLED;
     order.closureAt = new Date();
   }
 
@@ -524,7 +580,7 @@ export class OrdersService {
     const where: FindOptionsWhere<Order> =
       role === 'customer' ? { customerId: id } : { providerId: id };
 
-    if (status && ORDER_STATUSES.includes(status as any)) {
+    if (status && Object.values(OrderStatus).includes(status as OrderStatus)) {
       where.status = status as OrderStatus;
     }
 

@@ -12,6 +12,7 @@ import * as bcrypt from 'bcryptjs';
 import { Exclude } from 'class-transformer';
 import { Customer } from '../../orders/entities/customer.entity';
 import { Provider } from '../../orders/entities/provider.entity';
+import { Gender, UserRole, UserStatus } from '../../core/enums/user.enum';
 
 @Entity('users')
 export class User {
@@ -39,8 +40,8 @@ export class User {
   @ApiProperty({ description: 'Gender', default: 'prefer not to say' })
   @Column({
     type: 'enum',
-    enum: ['male', 'female', 'gender diverse', 'prefer not to say'],
-    default: 'prefer not to say',
+    enum: Gender,
+    default: Gender.PREFER_NOT_TO_SAY,
   })
   gender: string;
 
@@ -55,8 +56,8 @@ export class User {
   @ApiProperty({ description: 'User role', default: 'customer' })
   @Column({
     type: 'enum',
-    enum: ['customer', 'provider', 'admin'],
-    default: 'customer',
+    enum: UserRole,
+    default: UserRole.CUSTOMER,
   })
   @Exclude()
   role: string;
@@ -66,12 +67,12 @@ export class User {
 
   @ApiProperty({
     description: 'User status',
-    default: 'active',
+    default: UserStatus.ACTIVE,
   })
   @Column({
     type: 'enum',
-    enum: ['pending', 'active', 'banned'],
-    default: 'active',
+    enum: UserStatus,
+    default: UserStatus.ACTIVE,
   })
   status: string;
 

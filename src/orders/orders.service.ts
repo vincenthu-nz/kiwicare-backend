@@ -19,7 +19,7 @@ import { StartOrderDto } from './dto/start-order.dto';
 import { OrdersPolicy } from './policies/orders.policy';
 import { CompleteOrderDto } from './dto/complete-order.dto';
 import { User } from '../user/entities/user.entity';
-import { nzdToCents } from '../core/utils/currency.util';
+import { centsToNzd, nzdToCents } from '../core/utils/currency.util';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { Review } from './entities/review.entity';
 import { PaymentStatus } from '../core/enums/payment-status.enum';
@@ -33,7 +33,7 @@ import {
 
 @Injectable()
 export class OrdersService {
-  private readonly RATE_PER_KM = 1;
+  private readonly RATE_PER_KM = 1; // NZD per km
 
   constructor(
     @InjectRepository(User)
@@ -90,7 +90,7 @@ export class OrdersService {
       );
     }
 
-    const serviceFee = nzdToCents(providerService.price);
+    const serviceFee = centsToNzd(providerService.price);
 
     const { distance, duration, geometry } =
       await this.mapboxService.getDirections(
@@ -99,15 +99,15 @@ export class OrdersService {
       );
 
     const distanceKm = distance / 1000;
+    const travelFee = +(distanceKm * this.RATE_PER_KM).toFixed(2);
 
-    const travelFee = nzdToCents(distanceKm * this.RATE_PER_KM);
     const totalAmount = serviceFee + travelFee;
 
     if (user.balance < totalAmount) {
       throw new BadRequestException('Insufficient balance. Please recharge.');
     }
 
-    user.balance -= totalAmount;
+    user.balance -= nzdToCents(totalAmount);
     await this.userRepo.save(user);
 
     const order = this.orderRepo.create({
@@ -122,9 +122,9 @@ export class OrdersService {
       distanceM: distance,
       driveDurationS: duration,
       routeGeometry: geometry,
-      serviceFee,
-      travelFee,
-      totalAmount,
+      serviceFee: nzdToCents(serviceFee),
+      travelFee: nzdToCents(travelFee),
+      totalAmount: nzdToCents(totalAmount),
       status: OrderStatus.PENDING,
       paymentStatus: PaymentStatus.PAID,
     });

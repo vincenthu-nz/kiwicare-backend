@@ -15,12 +15,15 @@ export function nzdToCents(nzd: number | string): number {
 
 /**
  * Convert cents to NZD.
- * @param cents Amount in cents (integer).
+ * @param cents Amount in cents (integer or string).
  * @returns Amount in NZD (number with two decimal places).
  */
-export function centsToNzd(cents: number): number {
-  if (!Number.isFinite(cents)) {
-    throw new Error('Invalid cents amount');
+export function centsToNzd(cents: number | string): number {
+  const n = typeof cents === 'string' ? Number(cents) : cents;
+
+  if (!Number.isFinite(n) || !Number.isInteger(n)) {
+    throw new Error('Invalid cents amount (must be integer)');
   }
-  return +(cents / 100).toFixed(2);
+
+  return n / 100;
 }

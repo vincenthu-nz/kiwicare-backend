@@ -111,7 +111,6 @@ export class UserService {
       }
     }
 
-    // Save after conversion, excluding @Exclude fields
     const updatedUser = await this.userRepository.save(user);
     return instanceToPlain(updatedUser);
   }

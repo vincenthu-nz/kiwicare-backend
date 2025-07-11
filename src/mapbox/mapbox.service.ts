@@ -80,14 +80,12 @@ export class MapboxService {
       );
     }
 
-    // ✅ Check Mapbox "code"
     if (!data.code || data.code !== 'Ok') {
       const message = data.message || data.code || 'Unknown error';
       this.logger.error(`Mapbox API error: ${message}`);
       throw new InternalServerErrorException(`Mapbox error: ${message}`);
     }
 
-    // ✅ Validate routes
     if (
       !data.routes ||
       !Array.isArray(data.routes) ||
@@ -99,7 +97,6 @@ export class MapboxService {
 
     const route = data.routes[0];
 
-    // ✅ Final sanity check
     if (
       !route ||
       typeof route.distance !== 'number' ||

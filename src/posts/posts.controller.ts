@@ -13,8 +13,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CreatePostDto, PostsRo } from './dto/post.dto';
-import { AuthGuard } from '@nestjs/passport';
 import { Roles, RolesGuard } from '../auth/role.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('Posts')
 @Controller('post')
@@ -25,7 +25,7 @@ export class PostsController {
   @ApiBearerAuth()
   @Post()
   @Roles('admin', 'root')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   async create(@Body() post: CreatePostDto, @Req() req) {
     return await this.postsService.create(req.user, post);
   }
@@ -57,7 +57,7 @@ export class PostsController {
   @ApiOperation({ summary: 'Update specific post' })
   @ApiBearerAuth()
   @Put(':id')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard)
   async update(@Param('id') id: number, @Body() post: CreatePostDto) {
     return await this.postsService.updateById(id, post);
   }

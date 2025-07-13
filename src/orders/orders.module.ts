@@ -7,7 +7,7 @@ import { Order } from './entities/order.entity';
 import { ProviderService } from './entities/provider-services.entity';
 import { AuthModule } from '../auth/auth.module';
 import { Customer } from './entities/customer.entity';
-import { Provider } from './entities/provider.entity';
+import { Provider } from '../providers/entities/provider.entity';
 import { Service } from './entities/service.entity';
 import { OrdersPolicy } from './policies/orders.policy';
 import { User } from '../user/entities/user.entity';

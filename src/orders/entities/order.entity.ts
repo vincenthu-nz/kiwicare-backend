@@ -7,7 +7,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Customer } from './customer.entity';
-import { Provider } from './provider.entity';
+import { Provider } from '../../providers/entities/provider.entity';
 import { Service } from './service.entity';
 import { PaymentStatus } from '../../core/enums/payment-status.enum';
 import { ClosureType, OrderStatus } from '../../core/enums/order.enum';

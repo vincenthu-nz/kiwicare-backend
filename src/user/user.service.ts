@@ -15,6 +15,7 @@ import { randomUUID } from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { MailerService } from '../mailer/mailer.service';
 import { instanceToPlain } from 'class-transformer';
+import { UserRole } from '../core/enums/user.enum';
 
 @Injectable()
 export class UserService {
@@ -53,6 +54,7 @@ export class UserService {
     const pendingUser = this.pendingUserRepository.create({
       email,
       password: hashedPassword,
+      role: createUserDto.role || UserRole.CUSTOMER,
       firstName: firstName ?? null,
       lastName: lastName ?? null,
       token: verifyToken,

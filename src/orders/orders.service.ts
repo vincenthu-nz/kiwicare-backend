@@ -13,7 +13,7 @@ import { ProviderService } from './entities/provider-services.entity';
 import { ClosureOrderDto } from './dto/closure-order.dto';
 
 import { Customer } from './entities/customer.entity';
-import { Provider } from './entities/provider.entity';
+import { Provider } from '../providers/entities/provider.entity';
 import { calculateDistance } from '../core/utils/distance.util';
 import { StartOrderDto } from './dto/start-order.dto';
 import { OrdersPolicy } from './policies/orders.policy';

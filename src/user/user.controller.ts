@@ -22,11 +22,11 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { UserInfoDto } from './dto/user-info.dto';
-import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AwsS3Service } from '../aws/aws-s3.service';
 import { plainToInstance } from 'class-transformer';
 import { User } from './entities/user.entity';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('user')
 @Controller('user')
@@ -46,7 +46,7 @@ export class UserController {
 
   @ApiOperation({ summary: 'Fetch user info' })
   @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard)
   @Get()
   async getUserInfo(@Req() req) {
     return plainToInstance(User, req.user);
@@ -54,7 +54,7 @@ export class UserController {
 
   @ApiOperation({ summary: 'Update user info' })
   @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard)
   @Patch('me')
   updateMyProfile(@Req() req, @Body() dto: UpdateUserDto) {
     const userId = req.user.id;
@@ -62,7 +62,7 @@ export class UserController {
   }
 
   @Post('avatar')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('file'))
   async uploadAvatar(@Req() req, @UploadedFile() file: Express.Multer.File) {
     if (!file) {

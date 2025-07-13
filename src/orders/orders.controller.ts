@@ -11,20 +11,20 @@ import {
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
-import { AuthGuard } from '@nestjs/passport';
 import { ApiOperation } from '@nestjs/swagger';
 import { ClosureOrderDto } from './dto/closure-order.dto';
 import { Roles, RolesGuard } from '../auth/role.guard';
 import { StartOrderDto } from './dto/start-order.dto';
 import { CompleteOrderDto } from './dto/complete-order.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('orders')
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @ApiOperation({ summary: 'Create orders' })
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard)
   @Post()
   async createOrder(@Req() req, @Body() dto: CreateOrderDto) {
     return this.ordersService.createOrder(req.user, dto);
@@ -32,7 +32,7 @@ export class OrdersController {
 
   @ApiOperation({ summary: 'Cancel orders' })
   @Patch(':id/cancel')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   async cancelOrder(
     @Param('id') id: string,
     @Req() req,
@@ -43,7 +43,7 @@ export class OrdersController {
 
   @ApiOperation({ summary: 'Reject orders' })
   @Patch(':id/reject')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   async rejectOrder(
     @Param('id') id: string,
     @Req() req,
@@ -54,7 +54,7 @@ export class OrdersController {
 
   @ApiOperation({ summary: 'Get my orders' })
   @Get('my')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   async getMyOrders(
     @Req() req,
     @Query('status') status?: string,
@@ -65,7 +65,7 @@ export class OrdersController {
 
   @ApiOperation({ summary: 'Accept orders' })
   @Patch(':id/accept')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('provider')
   async acceptOrder(@Req() req, @Param('id') id: string) {
     return this.ordersService.acceptOrder(req.user, id);
@@ -73,7 +73,7 @@ export class OrdersController {
 
   @ApiOperation({ summary: 'Start orders' })
   @Patch(':id/start')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('provider')
   async startOrder(
     @Req() req,
@@ -85,7 +85,7 @@ export class OrdersController {
 
   @ApiOperation({ summary: 'Complete orders' })
   @Patch(':id/complete')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('provider')
   async completeOrder(
     @Req() req,
@@ -97,7 +97,7 @@ export class OrdersController {
 
   @ApiOperation({ summary: 'Comment orders' })
   @Post(':id/review')
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard)
   async addReview(
     @Param('id') id: string,
     @Body() dto: CreateReviewDto,

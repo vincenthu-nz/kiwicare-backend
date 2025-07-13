@@ -11,7 +11,7 @@ import {
 import * as bcrypt from 'bcryptjs';
 import { Exclude } from 'class-transformer';
 import { Customer } from '../../orders/entities/customer.entity';
-import { Provider } from '../../orders/entities/provider.entity';
+import { Provider } from '../../providers/entities/provider.entity';
 import { Gender, UserRole, UserStatus } from '../../core/enums/user.enum';
 
 @Entity('users')
@@ -84,19 +84,29 @@ export class User {
   @Column({ type: 'boolean', default: false, name: 'phone_verified' })
   phoneVerified: boolean;
 
-  @Column({ type: 'timestamptz', nullable: true, name: 'last_login_at' })
+  @Column({
+    type: 'timestamptz',
+    nullable: true,
+    name: 'last_login_at',
+    select: false,
+  })
   @Exclude()
   lastLoginAt?: Date;
 
-  @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
+  @CreateDateColumn({ type: 'timestamptz', name: 'created_at', select: false })
   @Exclude()
   createdAt: Date;
 
-  @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
+  @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at', select: false })
   @Exclude()
   updatedAt: Date;
 
-  @Column({ type: 'boolean', default: false, name: 'is_deleted' })
+  @Column({
+    type: 'boolean',
+    default: false,
+    name: 'is_deleted',
+    select: false,
+  })
   @Exclude()
   isDeleted: boolean;
 

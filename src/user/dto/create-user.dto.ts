@@ -7,6 +7,7 @@ import {
   IsString,
   IsStrongPassword,
 } from 'class-validator';
+import { UserRole } from '../../core/enums/user.enum';
 
 export class CreateUserDto {
   @ApiProperty({ description: 'email' })
@@ -30,11 +31,14 @@ export class CreateUserDto {
   )
   password: string;
 
-  @ApiProperty({ description: 'role', enum: ['customer', 'provider'] })
-  @IsIn(['customer', 'provider'], {
+  @ApiProperty({
+    description: 'role',
+    enum: [UserRole.CUSTOMER, UserRole.PROVIDER],
+  })
+  @IsIn([UserRole.CUSTOMER, UserRole.PROVIDER], {
     message: 'Invalid role',
   })
-  role: string;
+  role: UserRole;
 
   @ApiPropertyOptional({ description: 'first name' })
   @IsOptional()
@@ -45,26 +49,4 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   lastName?: string;
-
-  // @ApiProperty({
-  //   description: 'Unique verification token',
-  //   example: 'abc123xyz',
-  // })
-  // @IsNotEmpty()
-  // @IsString()
-  // token: string;
-
-  // @ApiProperty({
-  //   description: 'Created timestamp (ISO 8601)',
-  //   example: '2025-07-02T12:00:00Z',
-  // })
-  // @IsDate()
-  // created_at: Date;
-  //
-  // @ApiProperty({
-  //   description: 'Expiration timestamp (ISO 8601)',
-  //   example: '2025-07-03T12:00:00Z',
-  // })
-  // @IsDate()
-  // expires_at: Date;
 }

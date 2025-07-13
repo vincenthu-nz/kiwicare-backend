@@ -12,26 +12,22 @@ import { UserModule } from 'src/user/user.module';
 import { HttpModule } from '@nestjs/axios';
 import { RedisCacheModule } from '../db/redis-cache.module';
 
-const jwtModule = JwtModule.registerAsync({
-  inject: [ConfigService],
-  useFactory: async (configService: ConfigService) => {
-    return {
-      secret: configService.get('JWT_SECRET'),
-    };
-  },
-});
-
 @Module({
   imports: [
     TypeOrmModule.forFeature([User]),
     HttpModule,
     PassportModule,
-    jwtModule,
+    JwtModule.registerAsync({
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => ({
+        secret: configService.get('JWT_SECRET'),
+      }),
+    }),
     UserModule,
     RedisCacheModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, LocalStrategy, JwtStorage],
-  exports: [jwtModule],
+  exports: [JwtModule],
 })
 export class AuthModule {}

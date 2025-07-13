@@ -13,6 +13,7 @@ import { AppMailerModule } from './mailer/mailer.module';
 import { AwsS3Module } from './aws/aws-s3.module';
 import { OrdersModule } from './orders/orders.module';
 import { MapboxModule } from './mapbox/mapbox.module';
+import { ProvidersModule } from './providers/providers.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { MapboxModule } from './mapbox/mapbox.module';
     AwsS3Module,
     OrdersModule,
     MapboxModule,
+    ProvidersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

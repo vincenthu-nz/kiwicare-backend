@@ -14,6 +14,7 @@ import { AwsS3Module } from './aws/aws-s3.module';
 import { OrdersModule } from './orders/orders.module';
 import { MapboxModule } from './mapbox/mapbox.module';
 import { ProvidersModule } from './providers/providers.module';
+import { InvoicesModule } from './invoices/invoices.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { ProvidersModule } from './providers/providers.module';
     OrdersModule,
     MapboxModule,
     ProvidersModule,
+    InvoicesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

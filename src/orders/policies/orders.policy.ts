@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Provider } from '../../providers/entities/provider.entity';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { Order } from '../entities/order.entity';
 
 @Injectable()
@@ -18,13 +18,26 @@ export class OrdersPolicy {
   async ensureProviderOwnsOrder(
     userId: string,
     orderId: string,
+    manager?: EntityManager,
   ): Promise<Order> {
-    const provider = await this.providerRepo.findOneBy({ userId });
+    const provider = await (manager
+      ? manager.findOneBy(Provider, { userId })
+      : this.providerRepo.findOneBy({ userId }));
+
     if (!provider) {
       throw new ForbiddenException('You are not a valid provider');
     }
 
-    const order = await this.orderRepo.findOneBy({ id: orderId });
+    const order = await (manager
+      ? manager.findOne(Order, {
+          where: { id: orderId },
+          relations: ['customer.user', 'provider.user'],
+        })
+      : this.orderRepo.findOne({
+          where: { id: orderId },
+          relations: ['customer.user', 'provider.user'],
+        }));
+
     if (!order) {
       throw new NotFoundException('Order not found');
     }

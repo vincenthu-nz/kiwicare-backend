@@ -12,6 +12,13 @@ export enum ClosureType {
   REJECT = 'reject',
 }
 
+export enum PaymentMethod {
+  CREDIT_CARD = 'credit_card',
+  BANK_TRANSFER = 'bank_transfer',
+  CASH = 'cash',
+  OTHER = 'other',
+}
+
 export const CUSTOMER_CANCEL_ALLOWED_STATUSES: OrderStatus[] = [
   OrderStatus.PENDING,
 ];

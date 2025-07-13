@@ -53,14 +53,17 @@ export class Order {
   @Column({ type: 'integer', name: 'drive_duration_s' })
   driveDurationS: number;
 
-  @Column({ type: 'numeric', name: 'service_fee' })
+  @Column({ type: 'integer', name: 'service_fee' })
   serviceFee: number;
 
-  @Column({ type: 'numeric', name: 'travel_fee' })
+  @Column({ type: 'integer', name: 'travel_fee' })
   travelFee: number;
 
-  @Column({ type: 'numeric', name: 'total_amount' })
+  @Column({ type: 'integer', name: 'total_amount' })
   totalAmount: number;
+
+  @Column({ type: 'integer', name: 'platform_fee' })
+  platformFee: number;
 
   @Column({ type: 'jsonb', name: 'route_geometry' })
   routeGeometry: any;

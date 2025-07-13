@@ -5,13 +5,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, In, Repository } from 'typeorm';
+import { DataSource, FindOptionsWhere, In, Repository } from 'typeorm';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { MapboxService } from '../mapbox/mapbox.service';
 import { Order } from './entities/order.entity';
 import { ProviderService } from './entities/provider-services.entity';
 import { ClosureOrderDto } from './dto/closure-order.dto';
-
 import { Customer } from './entities/customer.entity';
 import { Provider } from '../providers/entities/provider.entity';
 import { calculateDistance } from '../core/utils/distance.util';
@@ -28,12 +27,20 @@ import {
   ClosureType,
   CUSTOMER_CANCEL_ALLOWED_STATUSES,
   OrderStatus,
+  PaymentMethod,
   PROVIDER_CANCEL_ALLOWED_STATUSES,
 } from '../core/enums/order.enum';
+import {
+  InvoiceRole,
+  InvoiceSource,
+  InvoiceStatus,
+} from '../core/enums/invoice.enum';
+import { Invoice } from '../invoices/entities/invoice.entity';
 
 @Injectable()
 export class OrdersService {
   private readonly RATE_PER_KM = 1; // NZD per km
+  private readonly PLATFORM_FEE_RATE = 0.15;
 
   constructor(
     @InjectRepository(User)
@@ -44,12 +51,15 @@ export class OrdersService {
     private readonly customerRepo: Repository<Customer>,
     @InjectRepository(Provider)
     private readonly providerRepo: Repository<Provider>,
+    @InjectRepository(Invoice)
+    private readonly invoiceRepo: Repository<Invoice>,
     @InjectRepository(Review)
     private readonly reviewRepo: Repository<Review>,
     private readonly mapboxService: MapboxService,
     @InjectRepository(ProviderService)
     private readonly providerServiceRepo: Repository<ProviderService>,
     private readonly ordersPolicy: OrdersPolicy,
+    private readonly dataSource: DataSource,
   ) {}
 
   async createOrder(user: User, dto: CreateOrderDto) {
@@ -125,6 +135,7 @@ export class OrdersService {
       serviceFee: nzdToCents(serviceFee),
       travelFee: nzdToCents(travelFee),
       totalAmount: nzdToCents(totalAmount),
+      platformFee: nzdToCents(totalAmount * this.PLATFORM_FEE_RATE),
       status: OrderStatus.PENDING,
       paymentStatus: PaymentStatus.PAID,
     });
@@ -445,66 +456,113 @@ export class OrdersService {
     orderId: string,
     dto: CompleteOrderDto,
   ) {
-    const order = await this.ordersPolicy.ensureProviderOwnsOrder(
-      user.id,
-      orderId,
-    );
+    const queryRunner = this.dataSource.createQueryRunner();
 
-    if (order.status !== 'in_progress') {
-      throw new BadRequestException('Only in-progress orders can be completed');
-    }
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    if (!order.startedAt) {
-      throw new BadRequestException('Order has not been started');
-    }
-
-    const providerService = await this.providerServiceRepo.findOne({
-      where: {
-        providerId: order.providerId,
-        serviceId: order.serviceId,
-      },
-    });
-
-    if (!providerService) {
-      throw new BadRequestException('Provider service configuration not found');
-    }
-
-    const elapsedMinutes =
-      (new Date().getTime() - order.startedAt.getTime()) / (1000 * 60);
-    if (elapsedMinutes < providerService.durationMinutes) {
-      throw new BadRequestException(
-        `Service time too short: must be at least ${providerService.durationMinutes} minutes`,
+    try {
+      const order = await this.ordersPolicy.ensureProviderOwnsOrder(
+        user.id,
+        orderId,
+        queryRunner.manager,
       );
-    }
 
-    const distanceMeters = calculateDistance(
-      dto.currentLatitude,
-      dto.currentLongitude,
-      order.serviceLatitude,
-      order.serviceLongitude,
-    );
+      if (order.status !== OrderStatus.IN_PROGRESS) {
+        throw new BadRequestException(
+          'Only in-progress orders can be completed',
+        );
+      }
+      if (!order.startedAt) {
+        throw new BadRequestException('Order has not been started');
+      }
 
-    if (distanceMeters > 200) {
-      throw new BadRequestException(
-        `You are too far from the service address to complete the order`,
+      const providerService = await this.providerServiceRepo.findOne({
+        where: {
+          providerId: order.providerId,
+          serviceId: order.serviceId,
+        },
+      });
+
+      if (!providerService) {
+        throw new BadRequestException(
+          'Provider service configuration not found',
+        );
+      }
+
+      const elapsedMinutes =
+        (new Date().getTime() - order.startedAt.getTime()) / (1000 * 60);
+      if (elapsedMinutes < providerService.durationMinutes) {
+        throw new BadRequestException(
+          `Service time too short: must be at least ${providerService.durationMinutes} minutes`,
+        );
+      }
+
+      const distanceMeters = calculateDistance(
+        dto.currentLatitude,
+        dto.currentLongitude,
+        order.serviceLatitude,
+        order.serviceLongitude,
       );
+      if (distanceMeters > 200) {
+        throw new BadRequestException(
+          'You are too far from the service address to complete the order',
+        );
+      }
+
+      order.status = OrderStatus.COMPLETED;
+      order.completedAt = new Date();
+      order.completedLatitude = dto.currentLatitude;
+      order.completedLongitude = dto.currentLongitude;
+      order.actualServiceMinutes = Math.round(elapsedMinutes);
+      order.updatedAt = new Date();
+
+      await queryRunner.manager.save(order);
+
+      // Generate two invoices(Provider and Customer)
+      const now = new Date();
+
+      const customerInvoice = this.invoiceRepo.create({
+        role: InvoiceRole.CUSTOMER,
+        user: order.customer.user,
+        order,
+        amount: order.totalAmount,
+        paymentMethod: PaymentMethod.OTHER,
+        status: InvoiceStatus.PAID,
+        source: InvoiceSource.ORDER,
+        description: `Payment for Order #${order.id}`,
+        paidAt: now,
+      });
+
+      const providerInvoice = this.invoiceRepo.create({
+        role: InvoiceRole.PROVIDER,
+        user: order.provider.user,
+        order,
+        amount: order.totalAmount - order.platformFee,
+        platformFee: order.platformFee,
+        paymentMethod: PaymentMethod.OTHER,
+        status: InvoiceStatus.PENDING,
+        source: InvoiceSource.ORDER,
+        description: `Settlement for Order #${order.id}`,
+      });
+
+      await queryRunner.manager.save(customerInvoice);
+      await queryRunner.manager.save(providerInvoice);
+
+      await queryRunner.commitTransaction();
+
+      return {
+        id: order.id,
+        status: order.status,
+        completedAt: order.completedAt,
+        actualDurationMinutes: order.actualServiceMinutes,
+      };
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
     }
-
-    order.status = OrderStatus.COMPLETED;
-    order.completedAt = new Date();
-    order.completedLatitude = dto.currentLatitude;
-    order.completedLongitude = dto.currentLongitude;
-    order.actualServiceMinutes = Math.round(elapsedMinutes);
-    order.updatedAt = new Date();
-
-    await this.orderRepo.save(order);
-
-    return {
-      id: order.id,
-      status: order.status,
-      completedAt: order.completedAt,
-      actualDurationMinutes: order.actualServiceMinutes,
-    };
   }
 
   async addReview(orderId: string, userId: string, dto: CreateReviewDto) {

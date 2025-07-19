@@ -1,0 +1,55 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.5.4
+        with:
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+
+      - name: Deploy to EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no ubuntu@3.25.103.124 << 'EOF'
+            echo "✅ Connected to EC2"
+
+            cd ~/kiwicare-backend || exit 1
+
+            echo "📁 Current directory: $(pwd)"
+
+            echo "🔍 Git remote:"
+            git remote -v
+
+            echo "🔍 Git status before pull:"
+            git status
+
+            echo "📦 Pulling latest code..."
+            git pull origin main || exit 1
+
+            echo "🔍 Git status after pull:"
+            git status
+
+            echo "🧾 Latest commit:"
+            git log -1 --oneline
+
+            echo "📦 Installing dependencies..."
+            yarn install
+
+            echo "🔨 Building project..."
+            yarn build
+
+            echo "🚀 Restarting app with PM2..."
+            pm2 restart kiwicare-backend || pm2 start dist/src/main.js --name kiwicare-backend
+
+            echo "✅ Deployment done!"
+          EOF

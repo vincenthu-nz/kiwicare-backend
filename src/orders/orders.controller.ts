@@ -13,11 +13,11 @@ import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { ApiOperation } from '@nestjs/swagger';
 import { ClosureOrderDto } from './dto/closure-order.dto';
-import { Roles, RolesGuard } from '../auth/guards/role.guard';
 import { StartOrderDto } from './dto/start-order.dto';
 import { CompleteOrderDto } from './dto/complete-order.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { ProviderOnly } from '../auth/decorators/auth.decorators';
 
 @Controller('orders')
 export class OrdersController {
@@ -32,7 +32,7 @@ export class OrdersController {
 
   @ApiOperation({ summary: 'Cancel orders' })
   @Patch(':id/cancel')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard)
   async cancelOrder(
     @Param('id') id: string,
     @Req() req,
@@ -43,7 +43,7 @@ export class OrdersController {
 
   @ApiOperation({ summary: 'Reject orders' })
   @Patch(':id/reject')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ProviderOnly()
   async rejectOrder(
     @Param('id') id: string,
     @Req() req,
@@ -54,7 +54,7 @@ export class OrdersController {
 
   @ApiOperation({ summary: 'Get my orders' })
   @Get('my')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard)
   async getMyOrders(
     @Req() req,
     @Query('status') status?: string,
@@ -65,16 +65,14 @@ export class OrdersController {
 
   @ApiOperation({ summary: 'Accept orders' })
   @Patch(':id/accept')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('provider')
+  @ProviderOnly()
   async acceptOrder(@Req() req, @Param('id') id: string) {
     return this.ordersService.acceptOrder(req.user, id);
   }
 
   @ApiOperation({ summary: 'Start orders' })
   @Patch(':id/start')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('provider')
+  @ProviderOnly()
   async startOrder(
     @Req() req,
     @Param('id') id: string,
@@ -85,8 +83,7 @@ export class OrdersController {
 
   @ApiOperation({ summary: 'Complete orders' })
   @Patch(':id/complete')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('provider')
+  @ProviderOnly()
   async completeOrder(
     @Req() req,
     @Param('id') id: string,

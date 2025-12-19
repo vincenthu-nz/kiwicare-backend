@@ -1,10 +1,10 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ProvidersService } from './providers.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { Roles, RolesGuard } from '../auth/guards/role.guard';
+import { Roles } from '../auth/guards/role.guard';
+import { ProviderOnly } from '../auth/decorators/auth.decorators';
 
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Controller('provider')
+@ProviderOnly()
+@Controller('providers')
 export class ProvidersController {
   constructor(private readonly providerService: ProvidersService) {}
 

@@ -6,9 +6,9 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { AwsS3Service } from './aws-s3.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { UploadInterceptor } from '../auth/upload.interceptor';
 
 @Controller('upload')
 export class UploadController {
@@ -16,7 +16,7 @@ export class UploadController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(UploadInterceptor)
   async uploadFile(
     @Req() req,
     @UploadedFile() file: Express.Multer.File,

@@ -22,11 +22,11 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { UserInfoDto } from './dto/user-info.dto';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { AwsS3Service } from '../aws/aws-s3.service';
 import { plainToInstance } from 'class-transformer';
 import { User } from './entities/user.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { UploadInterceptor } from '../auth/upload.interceptor';
 
 @ApiTags('user')
 @Controller('user')
@@ -63,7 +63,7 @@ export class UserController {
 
   @Post('avatar')
   @UseGuards(JwtAuthGuard)
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(UploadInterceptor)
   async uploadAvatar(@Req() req, @UploadedFile() file: Express.Multer.File) {
     if (!file) {
       throw new Error('No file uploaded');

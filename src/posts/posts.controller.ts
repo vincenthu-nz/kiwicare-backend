@@ -24,7 +24,7 @@ export class PostsController {
   @ApiOperation({ summary: 'Create a new post' })
   @ApiBearerAuth()
   @Post()
-  @Roles('admin', 'root')
+  @Roles('admin')
   @UseGuards(JwtAuthGuard, RolesGuard)
   async create(@Body() post: CreatePostDto, @Req() req) {
     return await this.postsService.create(req.user, post);

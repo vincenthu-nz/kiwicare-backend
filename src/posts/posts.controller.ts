@@ -13,8 +13,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CreatePostDto, PostsRo } from './dto/post.dto';
-import { Roles, RolesGuard } from '../auth/role.guard';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles, RolesGuard } from '../auth/guards/role.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('Posts')
 @Controller('post')

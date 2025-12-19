@@ -13,11 +13,11 @@ import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { ApiOperation } from '@nestjs/swagger';
 import { ClosureOrderDto } from './dto/closure-order.dto';
-import { Roles, RolesGuard } from '../auth/role.guard';
+import { Roles, RolesGuard } from '../auth/guards/role.guard';
 import { StartOrderDto } from './dto/start-order.dto';
 import { CompleteOrderDto } from './dto/complete-order.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('orders')
 export class OrdersController {

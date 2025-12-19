@@ -26,7 +26,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { AwsS3Service } from '../aws/aws-s3.service';
 import { plainToInstance } from 'class-transformer';
 import { User } from './entities/user.entity';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('user')
 @Controller('user')
